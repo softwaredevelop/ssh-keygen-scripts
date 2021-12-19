@@ -48,7 +48,6 @@ function keygen() {
     if btrfs subvolume create "$HOME"/.@ssh; then
       mkdir "$HOME"/.@ssh/.pw && chmod -R 700 "$HOME"/.@ssh
     fi
-
   elif [ ! -d "$HOME"/.ssh ] && ! df --type=btrfs / > /dev/null 2>&1; then
     if mkdir -p "$HOME"/.ssh/.pw; then
       chmod -R 700 "$HOME"/.ssh
@@ -63,7 +62,6 @@ function keygen() {
       chmod 644 "$HOME"/.@ssh/"$ID""$KEYNAME".key.pub
       unset -v SSHPASS
     fi
-
   elif command -v ssh-keygen > /dev/null 2>&1 && ! df --type=btrfs / > /dev/null 2>&1 && [ -d "$HOME"/.ssh ]; then
     if [[ -n $SSHPASS && -n $KEYNAME ]]; then
       echo "$SSHPASS" > "$HOME"/.ssh/.pw/pw-"$KEYNAME" && chmod 400 "$HOME"/.ssh/.pw/pw-"$KEYNAME"
