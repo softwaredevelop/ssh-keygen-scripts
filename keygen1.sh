@@ -26,6 +26,7 @@ function keygen() {
   REMOTEUSER=${2:-"ghuser"}
   KEYTYPE=${3:-"ed25519"}
   SSHPASS=$(tr -cd '[:alnum:][:punct:]' < /dev/urandom | head -c 32)
+  COMMENT="remote@user"
 
   if [[ -n $KEYTYPE ]]; then
     ID="id_${KEYTYPE}_"
@@ -33,13 +34,13 @@ function keygen() {
 
   if [[ -z $KEYTYPE ]]; then
     ID="id_rsa_"
-    KEYOPT="-a$KDF -trsa -b$RSA_KEYLENTGH"
+    KEYOPT="-a$KDF -trsa -b$RSA_KEYLENTGH -C$COMMENT"
   elif [[ $KEYTYPE == "rsa" ]]; then
-    KEYOPT="-a$KDF -t$KEYTYPE -b$RSA_KEYLENTGH"
+    KEYOPT="-a$KDF -t$KEYTYPE -b$RSA_KEYLENTGH -C$COMMENT"
   elif [[ $KEYTYPE == "ecdsa" ]]; then
-    KEYOPT="-a$KDF -t$KEYTYPE -b$ECDSA_KEYLENTGH"
+    KEYOPT="-a$KDF -t$KEYTYPE -b$ECDSA_KEYLENTGH -C$COMMENT"
   elif [[ $KEYTYPE == "ed25519" ]]; then
-    KEYOPT="-a$KDF -t$KEYTYPE"
+    KEYOPT="-a$KDF -t$KEYTYPE -C$COMMENT"
   fi
 
   KEYNAME="$REMOTEHOST"."$REMOTEUSER"_$(hostname)_$(date +%y%m%d-%H%M%S)
