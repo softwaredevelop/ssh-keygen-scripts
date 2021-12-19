@@ -49,6 +49,13 @@ function keygen() {
       mkdir "$HOME"/.@ssh/.pw && chmod -R 700 "$HOME"/.@ssh
     fi
 
+  elif [ ! -d "$HOME"/.ssh ] && ! df --type=btrfs / > /dev/null 2>&1; then
+    if mkdir -p "$HOME"/.ssh/.pw; then
+      chmod -R 700 "$HOME"/.ssh
+    fi
+  fi
+
+  if command -v ssh-keygen > /dev/null 2>&1 && df --type=btrfs / > /dev/null 2>&1 && [ -d "$HOME"/.@ssh ]; then
     if [[ -n $SSHPASS && -n $KEYNAME ]]; then
       echo "$SSHPASS" > "$HOME"/.@ssh/.pw/pw-"$KEYNAME" && chmod 400 "$HOME"/.@ssh/.pw/pw-"$KEYNAME"
       ssh-keygen $KEYOPT -f"$HOME"/.@ssh/"$ID""$KEYNAME".key -N"$SSHPASS"
@@ -57,11 +64,7 @@ function keygen() {
       unset -v SSHPASS
     fi
 
-  elif [ ! -d "$HOME"/.ssh ] && ! df --type=btrfs / > /dev/null 2>&1; then
-    if mkdir -p "$HOME"/.ssh/.pw; then
-      chmod -R 700 "$HOME"/.ssh
-    fi
-
+  elif command -v ssh-keygen > /dev/null 2>&1 && ! df --type=btrfs / > /dev/null 2>&1 && [ -d "$HOME"/.ssh ]; then
     if [[ -n $SSHPASS && -n $KEYNAME ]]; then
       echo "$SSHPASS" > "$HOME"/.ssh/.pw/pw-"$KEYNAME" && chmod 400 "$HOME"/.ssh/.pw/pw-"$KEYNAME"
       ssh-keygen $KEYOPT -f"$HOME"/.ssh/"$ID""$KEYNAME".key -N"$SSHPASS"
