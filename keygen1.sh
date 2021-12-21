@@ -43,7 +43,7 @@ function keygen() {
     KEYOPT="-a$KDF -t$KEYTYPE -C$COMMENT"
   fi
 
-  KEYNAME="$REMOTE_HOSTNAME"."$REMOTE_USER"_$(hostname)_$(date +%y%m%d-%H%M%S)
+  KEYNAME="$REMOTE_HOSTNAME"."$REMOTE_USER"_$(hostname)_$(date +%s | sha256sum | head -c 6)
 
   if df --type=btrfs / > /dev/null 2>&1 && command -v btrfs > /dev/null 2>&1 && [ ! -d "$HOME"/.ssh ]; then
     if btrfs subvolume create "$HOME"/.ssh; then
@@ -57,7 +57,7 @@ function keygen() {
 
   if command -v ssh-keygen > /dev/null 2>&1 && df --type=btrfs / > /dev/null 2>&1 && [ -d "$HOME"/.ssh ]; then
     if [[ -n $SSHPASS && -n $KEYNAME ]]; then
-      echo "$SSHPASS" > "$HOME"/.ssh/.pw/pw-"$KEYNAME" && chmod 400 "$HOME"/.ssh/.pw/pw-"$KEYNAME"
+      echo "$SSHPASS" > "$HOME"/.ssh/.pw/pw_"$KEYNAME" && chmod 400 "$HOME"/.ssh/.pw/pw_"$KEYNAME"
       ssh-keygen $KEYOPT -f"$HOME"/.ssh/"$ID""$KEYNAME".key -N"$SSHPASS"
       chmod 600 "$HOME"/.ssh/"$ID""$KEYNAME".key
       chmod 644 "$HOME"/.ssh/"$ID""$KEYNAME".key.pub
