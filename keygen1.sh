@@ -45,9 +45,9 @@ function keygen() {
 
   KEYNAME="$REMOTEHOST"."$REMOTEUSER"_$(hostname)_$(date +%y%m%d-%H%M%S)
 
-  if df --type=btrfs / > /dev/null 2>&1 && command -v btrfs > /dev/null 2>&1 && [ ! -d "$HOME"/.@ssh ]; then
-    if btrfs subvolume create "$HOME"/.@ssh; then
-      mkdir "$HOME"/.@ssh/.pw && chmod -R 700 "$HOME"/.@ssh
+  if df --type=btrfs / > /dev/null 2>&1 && command -v btrfs > /dev/null 2>&1 && [ ! -d "$HOME"/.ssh ]; then
+    if btrfs subvolume create "$HOME"/.ssh; then
+      mkdir "$HOME"/.ssh/.pw && chmod -R 700 "$HOME"/.ssh
     fi
   elif [ ! -d "$HOME"/.ssh ] && ! df --type=btrfs / > /dev/null 2>&1; then
     if mkdir -p "$HOME"/.ssh/.pw; then
@@ -55,15 +55,7 @@ function keygen() {
     fi
   fi
 
-  if command -v ssh-keygen > /dev/null 2>&1 && df --type=btrfs / > /dev/null 2>&1 && [ -d "$HOME"/.@ssh ]; then
-    if [[ -n $SSHPASS && -n $KEYNAME ]]; then
-      echo "$SSHPASS" > "$HOME"/.@ssh/.pw/pw-"$KEYNAME" && chmod 400 "$HOME"/.@ssh/.pw/pw-"$KEYNAME"
-      ssh-keygen $KEYOPT -f"$HOME"/.@ssh/"$ID""$KEYNAME".key -N"$SSHPASS"
-      chmod 600 "$HOME"/.@ssh/"$ID""$KEYNAME".key
-      chmod 644 "$HOME"/.@ssh/"$ID""$KEYNAME".key.pub
-      unset -v SSHPASS
-    fi
-  elif command -v ssh-keygen > /dev/null 2>&1 && ! df --type=btrfs / > /dev/null 2>&1 && [ -d "$HOME"/.ssh ]; then
+  if command -v ssh-keygen > /dev/null 2>&1 && df --type=btrfs / > /dev/null 2>&1 && [ -d "$HOME"/.ssh ]; then
     if [[ -n $SSHPASS && -n $KEYNAME ]]; then
       echo "$SSHPASS" > "$HOME"/.ssh/.pw/pw-"$KEYNAME" && chmod 400 "$HOME"/.ssh/.pw/pw-"$KEYNAME"
       ssh-keygen $KEYOPT -f"$HOME"/.ssh/"$ID""$KEYNAME".key -N"$SSHPASS"
@@ -72,27 +64,6 @@ function keygen() {
       unset -v SSHPASS
     fi
   fi
-}
-
-function keycheck() {
-  ssh-keygen -y -f "$1" > /dev/null 2>&1
-  echo $?
-}
-
-function keyrm() {
-  if [ -d "$HOME"/.@ssh ]; then
-    # if sudo btrfs subvolume delete "$HOME"/.@ssh > /dev/null 2>&1; then
-    #   echo $?
-    # fi
-    if sudo rm -rf "$HOME"/.@ssh > /dev/null 2>&1; then
-      echo $?
-    fi
-  elif [ -d "$HOME"/.ssh ]; then
-    if sudo rm -rf "$HOME"/.ssh > /dev/null 2>&1; then
-      echo $?
-    fi
-  fi
-  ls -la "$HOME"
 }
 
 # keygen "$@"
