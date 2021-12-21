@@ -64,6 +64,19 @@ function keygen() {
       unset -v SSHPASS
     fi
   fi
+
+  key="$HOME"/.ssh/"$ID""$KEYNAME".key
+  config="$HOME"/.ssh/config
+  if [ -f "$key" ]; then
+    cat << EOF >> "$config"
+Host                 $REMOTE_USER.$REMOTE_HOSTNAME
+Hostname             $REMOTE_HOSTNAME
+IdentitiesOnly       yes
+IdentityFile         $key
+User                 git
+
+EOF
+  fi
 }
 
 # keygen "$@"
