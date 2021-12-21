@@ -26,7 +26,7 @@ function keygen() {
   REMOTE_USER=${2:-"ghuser"}
   KEYTYPE=${3:-"ed25519"}
   SSHPASS=$(tr -cd '[:alnum:][:punct:]' < /dev/urandom | head -c 32)
-  COMMENT="remote@user"
+  COMMENT=${4:-"$REMOTE_USER@$REMOTE_HOSTNAME"}
 
   if [[ -n $KEYTYPE ]]; then
     ID="id_${KEYTYPE}_"
