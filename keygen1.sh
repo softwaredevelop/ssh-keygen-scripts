@@ -22,8 +22,8 @@ function keygen() {
 
   KDF=$(shuf -i 16-26 -n1)
 
-  REMOTEHOST=${1:-"gh"}
-  REMOTEUSER=${2:-"ghuser"}
+  REMOTE_HOSTNAME=${1:-"gh"}
+  REMOTE_USER=${2:-"ghuser"}
   KEYTYPE=${3:-"ed25519"}
   SSHPASS=$(tr -cd '[:alnum:][:punct:]' < /dev/urandom | head -c 32)
   COMMENT="remote@user"
@@ -43,7 +43,7 @@ function keygen() {
     KEYOPT="-a$KDF -t$KEYTYPE -C$COMMENT"
   fi
 
-  KEYNAME="$REMOTEHOST"."$REMOTEUSER"_$(hostname)_$(date +%y%m%d-%H%M%S)
+  KEYNAME="$REMOTE_HOSTNAME"."$REMOTE_USER"_$(hostname)_$(date +%y%m%d-%H%M%S)
 
   if df --type=btrfs / > /dev/null 2>&1 && command -v btrfs > /dev/null 2>&1 && [ ! -d "$HOME"/.ssh ]; then
     if btrfs subvolume create "$HOME"/.ssh; then
