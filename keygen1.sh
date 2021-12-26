@@ -69,7 +69,7 @@ function keygen() {
   config="$HOME"/.ssh/config
   if [ -f "$key" ]; then
     cat << EOF >> "$config"
-Host                 $REMOTE_USER.$REMOTE_HOSTNAME
+Host                 $REMOTE_HOSTNAME.$REMOTE_USER
 Hostname             $REMOTE_HOSTNAME
 IdentitiesOnly       yes
 IdentityFile         $key
