@@ -55,10 +55,10 @@ function keygen() {
     fi
   fi
 
-  if command -v ssh-keygen > /dev/null 2>&1 && df --type=btrfs / > /dev/null 2>&1 && [ -d "$HOME"/.ssh ]; then
+  if command -v ssh-keygen > /dev/null 2>&1 && [ -d "$HOME"/.ssh ]; then
     if [[ -n $SSHPASS && -n $KEYNAME ]]; then
       echo "$SSHPASS" > "$HOME"/.ssh/.pw/pw_"$KEYNAME" && chmod 400 "$HOME"/.ssh/.pw/pw_"$KEYNAME"
-      ssh-keygen $KEYOPT -f"$HOME"/.ssh/"$ID""$KEYNAME".key -N"$SSHPASS"
+      ssh-keygen $KEYOPT -f"$HOME"/.ssh/"$ID""$KEYNAME".key -N "$SSHPASS"
       chmod 600 "$HOME"/.ssh/"$ID""$KEYNAME".key
       chmod 644 "$HOME"/.ssh/"$ID""$KEYNAME".key.pub
       unset -v SSHPASS
