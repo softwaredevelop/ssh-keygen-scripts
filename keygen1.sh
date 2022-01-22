@@ -74,6 +74,7 @@ Hostname             $REMOTE_HOSTNAME
 IdentitiesOnly       yes
 IdentityFile         $key
 User                 git
+ProxyCommand         nc -X 5 -x 127.0.0.1:9050 %h %p
 
 EOF
   fi
