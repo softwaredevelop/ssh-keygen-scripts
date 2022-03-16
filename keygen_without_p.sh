@@ -17,6 +17,11 @@ function keygen_without_p() {
       openssh-client
   fi
 
+  if ! command -v nc > /dev/null 2>&1; then
+    sudo apt-get install --no-install-recommends --assume-yes \
+      netcat
+  fi
+
   RSA_KEYLENTGH=4096
   ECDSA_KEYLENTGH=521
 
@@ -79,5 +84,5 @@ EOF
   fi
 }
 
-# keygen "$@"
+# keygen_without_p "$@"
 set +xv
