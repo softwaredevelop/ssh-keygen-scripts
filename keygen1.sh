@@ -19,7 +19,7 @@ function keygen() {
 
   if ! command -v nc > /dev/null 2>&1; then
     sudo apt-get install --no-install-recommends --assume-yes \
-      netcat
+      netcat-openbsd
   fi
 
   RSA_KEYLENTGH=4096
