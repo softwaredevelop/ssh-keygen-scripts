@@ -9,5 +9,4 @@ updates:
       time: "00:00"
       timezone: "Europe/Berlin"
     labels:
-      - "GitHub Actions dependencies"
-      - "triage-board"
+      - "github-actions dependencies"
