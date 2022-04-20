@@ -1,0 +1,61 @@
+---
+name: Containerfile Linter
+
+on:
+  push:
+    branches:
+      - "main"
+    paths:
+      - ".devcontainer/Containerfile.*"
+  pull_request:
+    branches:
+      - "main"
+    paths:
+      - ".devcontainer/Containerfile.*"
+
+concurrency:
+  group: ${{ github.ref }}-${{ github.workflow }}
+  cancel-in-progress: true
+
+jobs:
+  skip-duplicate-actions:
+    name: Skip Duplicate Actions
+    runs-on: ubuntu-latest
+    steps:
+      - uses: fkirc/skip-duplicate-actions@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          cancel_others: true
+          concurrent_skipping: never
+
+  run-lint:
+    name: Hadolint Action
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Hadolint
+        uses: hadolint/hadolint-action@v2.1.0
+        with:
+          dockerfile: .devcontainer/Containerfile.ubuntu
+
+  scan:
+    name: Scan config files for vulnerabilities
+    runs-on: ubuntu-latest
+    container:
+      image: docker.io/aquasec/trivy:latest
+      volumes:
+        - "${{ github.workspace }}:/volume"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Scan config Containerfiles for vulnerabilities
+        run: |
+          trivy config \
+          --severity CRITICAL,HIGH \
+          --file-patterns "dockerfile:Containerfile" \
+          /volume
