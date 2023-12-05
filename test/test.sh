@@ -31,7 +31,7 @@ elif [ "${ID_OS}" = "alpine" ]; then
 fi
 check "non-root-user" non_root_user
 check "hadolint" hadolint --version
-# check "shfmt" shfmt --version
+check "shfmt" shfmt --version
 # check "shellcheck" shellcheck --version
 # check "editorconfig" ec --version
 # check "bashdb" bashdb --version
