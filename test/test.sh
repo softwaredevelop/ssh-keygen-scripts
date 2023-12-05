@@ -30,7 +30,7 @@ elif [ "${ID_OS}" = "alpine" ]; then
   checkOSPackages "common-os-packages" ${package_list_alpine}
 fi
 check "non-root-user" non_root_user
-# check "hadolint" hadolint --version
+check "hadolint" hadolint --version
 # check "shfmt" shfmt --version
 # check "shellcheck" shellcheck --version
 # check "editorconfig" ec --version
