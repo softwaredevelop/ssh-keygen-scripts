@@ -1,12 +1,9 @@
 ---
-name: Super-Linter
+name: super-linter
+
+run-name: Super Linter
 
 on:
-  push:
-    branches:
-      - "main"
-    paths-ignore:
-      - ".devcontainer/Containerfile.*"
   pull_request:
     branches:
       - "main"

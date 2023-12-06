@@ -1,12 +1,9 @@
 ---
-name: Containerfile Linter
+name: containerfile-linter
+
+run-name: Containerfile Linter
 
 on:
-  push:
-    branches:
-      - "main"
-    paths:
-      - ".devcontainer/Containerfile.*"
   pull_request:
     branches:
       - "main"
