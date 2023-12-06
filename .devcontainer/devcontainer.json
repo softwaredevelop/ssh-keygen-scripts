@@ -15,7 +15,7 @@
 				"vscode": {
 					"settings": {},
 					"extensions": [
-					// "ms-vscode.powershell",
+					"ms-vscode.powershell",
 					"rogalmic.bash-debug"
 				]
 					// "devPort": {}

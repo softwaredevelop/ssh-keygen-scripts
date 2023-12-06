@@ -35,5 +35,6 @@ check "shfmt" shfmt --version
 check "shellcheck" shellcheck --version
 check "editorconfig" ec --version
 check "bashdb" bashdb --version
+check "powershell" pwsh --version
 
 reportResults
