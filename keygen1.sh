@@ -12,12 +12,12 @@ fi
 
 function keygen() {
 
-  if ! command -v ssh-keygen > /dev/null 2>&1; then
+  if ! command -v ssh-keygen >/dev/null 2>&1; then
     sudo apt-get install --no-install-recommends --assume-yes \
       openssh-client
   fi
 
-  if ! command -v nc > /dev/null 2>&1; then
+  if ! command -v nc >/dev/null 2>&1; then
     sudo apt-get install --no-install-recommends --assume-yes \
       netcat-openbsd
   fi
@@ -30,7 +30,7 @@ function keygen() {
   REMOTE_HOSTNAME=${1:-"gh"}
   REMOTE_USER=${2:-"ghuser"}
   KEYTYPE=${3:-"ed25519"}
-  SSHPASS=$(tr -cd '[:alnum:][:punct:]' < /dev/urandom | head -c 32)
+  SSHPASS=$(tr -cd '[:alnum:][:punct:]' </dev/urandom | head -c 32)
   COMMENT=${4:-"$REMOTE_USER@$REMOTE_HOSTNAME"}
 
   if [[ -n $KEYTYPE ]]; then
@@ -50,19 +50,19 @@ function keygen() {
 
   KEYNAME="$REMOTE_HOSTNAME"."$REMOTE_USER"_$(hostname)_$(date +%s | sha256sum | head -c 6)
 
-  if df --type=btrfs / > /dev/null 2>&1 && command -v btrfs > /dev/null 2>&1 && [ ! -d "$HOME"/.ssh ]; then
+  if df --type=btrfs / >/dev/null 2>&1 && command -v btrfs >/dev/null 2>&1 && [ ! -d "$HOME"/.ssh ]; then
     if btrfs subvolume create "$HOME"/.ssh; then
       mkdir "$HOME"/.ssh/.pw && chmod -R 700 "$HOME"/.ssh
     fi
-  elif [ ! -d "$HOME"/.ssh ] && ! df --type=btrfs / > /dev/null 2>&1; then
+  elif [ ! -d "$HOME"/.ssh ] && ! df --type=btrfs / >/dev/null 2>&1; then
     if mkdir -p "$HOME"/.ssh/.pw; then
       chmod -R 700 "$HOME"/.ssh
     fi
   fi
 
-  if command -v ssh-keygen > /dev/null 2>&1 && [ -d "$HOME"/.ssh ]; then
+  if command -v ssh-keygen >/dev/null 2>&1 && [ -d "$HOME"/.ssh ]; then
     if [[ -n $SSHPASS && -n $KEYNAME ]]; then
-      echo "$SSHPASS" > "$HOME"/.ssh/.pw/pw_"$KEYNAME" && chmod 400 "$HOME"/.ssh/.pw/pw_"$KEYNAME"
+      echo "$SSHPASS" >"$HOME"/.ssh/.pw/pw_"$KEYNAME" && chmod 400 "$HOME"/.ssh/.pw/pw_"$KEYNAME"
       ssh-keygen $KEYOPT -f"$HOME"/.ssh/"$ID""$KEYNAME".key -N "$SSHPASS"
       chmod 600 "$HOME"/.ssh/"$ID""$KEYNAME".key
       chmod 644 "$HOME"/.ssh/"$ID""$KEYNAME".key.pub
@@ -73,7 +73,7 @@ function keygen() {
   key="$HOME"/.ssh/"$ID""$KEYNAME".key
   config="$HOME"/.ssh/config
   if [ -f "$key" ]; then
-    cat << EOF >> "$config"
+    cat <<EOF >>"$config"
 Host                 $REMOTE_HOSTNAME.$REMOTE_USER
 Hostname             $REMOTE_HOSTNAME
 IdentitiesOnly       yes
