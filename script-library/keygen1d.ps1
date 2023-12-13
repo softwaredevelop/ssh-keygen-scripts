@@ -3,6 +3,28 @@
 
 # Function to generate SSH keys and configure SSH client
 function keygen {
+
+    $RSA_KEYLENGTH = 4096
+    $ECDSA_KEYLENGTH = 521
+
+    $KDF = Get-Random -Minimum 16 -Maximum 27
+
+    $REMOTE_HOSTNAME = if ($args[0]) { $args[0] } else { "gh" }
+    $REMOTE_USER = if ($args[1]) { $args[1] } else { "ghuser" }
+    $KEYTYPE = if ($args[2]) { $args[2] } else { "ed25519" }
+    $COMMENT = if ($args[3]) { $args[3] } else { "$REMOTE_USER@$REMOTE_HOSTNAME" }
+
+    if ($KEYTYPE -eq "rsa") {
+        $ID = "id_rsa_"
+        $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-b$RSA_KEYLENGTH", "-C$COMMENT")
+    } elseif ($KEYTYPE -eq "ecdsa") {
+        $ID = "id_ecdsa_"
+        $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-b$ECDSA_KEYLENGTH", "-C$COMMENT")
+    } elseif ($KEYTYPE -eq "ed25519") {
+        $ID = "id_ed25519_"
+        $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-C$COMMENT")
+    }
+
     # We are on Linux
     $sshPath = "/usr/bin/ssh"
     $ncPath = "/usr/bin/nc"
@@ -29,6 +51,7 @@ function keygen {
     # Get the hostname of the machine
     $hostname = (Invoke-Command { hostname }).Trim()
 
+    # Set the path to the .ssh directory
     $sshDirPath = Join-Path -Path $env:HOME -ChildPath ".ssh"
     # Create .ssh directory if not already exists
     if (-not (Test-Path $sshDirPath)) {
@@ -53,27 +76,8 @@ function keygen {
     # On Linux, use chmod command to set permissions
     Invoke-Command { chmod -R 700 $sshDirPath }
 
-    $RSA_KEYLENGTH = 4096
-    $ECDSA_KEYLENGTH = 521
-
-    $KDF = Get-Random -Minimum 16 -Maximum 27
-
-    $REMOTE_HOSTNAME = if ($args[0]) { $args[0] } else { "gh" }
-    $REMOTE_USER = if ($args[1]) { $args[1] } else { "ghuser" }
-    $KEYTYPE = if ($args[2]) { $args[2] } else { "ed25519" }
-    $COMMENT = if ($args[3]) { $args[3] } else { "$REMOTE_USER@$REMOTE_HOSTNAME" }
-
-    if ($KEYTYPE -eq "rsa") {
-        $ID = "id_rsa_"
-        $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-b$RSA_KEYLENGTH", "-C$COMMENT")
-    } elseif ($KEYTYPE -eq "ecdsa") {
-        $ID = "id_ecdsa_"
-        $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-b$ECDSA_KEYLENGTH", "-C$COMMENT")
-    } elseif ($KEYTYPE -eq "ed25519") {
-        $ID = "id_ed25519_"
-        $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-C$COMMENT")
-    }
-
+    # Get the hostname of the machine
+    $hostname = (Invoke-Command { hostname }).Trim()
     $hash = -join ((0..9) + ('a'..'f') | Get-Random -Count 6)
     $KEYNAME = "$REMOTE_HOSTNAME.$REMOTE_USER" + "_" + $hostname + "_" + $hash
 
@@ -112,6 +116,7 @@ IdentitiesOnly       yes
 IdentityFile         $keyfile
 User                 git
 ProxyCommand         nc -X 5 -x 127.0.0.1:9050 %h %p
+
 "@
 
         Add-Content -Path $config -Value $configContent
@@ -126,6 +131,28 @@ if (!(Test-Path -Path $PROFILE)) {
 # Function to generate SSH keys and configure SSH client
 $keygenFunction = @'
 function keygen {
+
+    $RSA_KEYLENGTH = 4096
+    $ECDSA_KEYLENGTH = 521
+
+    $KDF = Get-Random -Minimum 16 -Maximum 27
+
+    $REMOTE_HOSTNAME = if ($args[0]) { $args[0] } else { "gh" }
+    $REMOTE_USER = if ($args[1]) { $args[1] } else { "ghuser" }
+    $KEYTYPE = if ($args[2]) { $args[2] } else { "ed25519" }
+    $COMMENT = if ($args[3]) { $args[3] } else { "$REMOTE_USER@$REMOTE_HOSTNAME" }
+
+    if ($KEYTYPE -eq "rsa") {
+        $ID = "id_rsa_"
+        $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-b$RSA_KEYLENGTH", "-C$COMMENT")
+    } elseif ($KEYTYPE -eq "ecdsa") {
+        $ID = "id_ecdsa_"
+        $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-b$ECDSA_KEYLENGTH", "-C$COMMENT")
+    } elseif ($KEYTYPE -eq "ed25519") {
+        $ID = "id_ed25519_"
+        $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-C$COMMENT")
+    }
+
     # We are on Linux
     $sshPath = "/usr/bin/ssh"
     $ncPath = "/usr/bin/nc"
@@ -152,6 +179,7 @@ function keygen {
     # Get the hostname of the machine
     $hostname = (Invoke-Command { hostname }).Trim()
 
+    # Set the path to the .ssh directory
     $sshDirPath = Join-Path -Path $env:HOME -ChildPath ".ssh"
     # Create .ssh directory if not already exists
     if (-not (Test-Path $sshDirPath)) {
@@ -176,27 +204,8 @@ function keygen {
     # On Linux, use chmod command to set permissions
     Invoke-Command { chmod -R 700 $sshDirPath }
 
-    $RSA_KEYLENGTH = 4096
-    $ECDSA_KEYLENGTH = 521
-
-    $KDF = Get-Random -Minimum 16 -Maximum 27
-
-    $REMOTE_HOSTNAME = if ($args[0]) { $args[0] } else { "gh" }
-    $REMOTE_USER = if ($args[1]) { $args[1] } else { "ghuser" }
-    $KEYTYPE = if ($args[2]) { $args[2] } else { "ed25519" }
-    $COMMENT = if ($args[3]) { $args[3] } else { "$REMOTE_USER@$REMOTE_HOSTNAME" }
-
-    if ($KEYTYPE -eq "rsa") {
-        $ID = "id_rsa_"
-        $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-b$RSA_KEYLENGTH", "-C$COMMENT")
-    } elseif ($KEYTYPE -eq "ecdsa") {
-        $ID = "id_ecdsa_"
-        $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-b$ECDSA_KEYLENGTH", "-C$COMMENT")
-    } elseif ($KEYTYPE -eq "ed25519") {
-        $ID = "id_ed25519_"
-        $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-C$COMMENT")
-    }
-
+    # Get the hostname of the machine
+    $hostname = (Invoke-Command { hostname }).Trim()
     $hash = -join ((0..9) + ('a'..'f') | Get-Random -Count 6)
     $KEYNAME = "$REMOTE_HOSTNAME.$REMOTE_USER" + "_" + $hostname + "_" + $hash
 
@@ -235,6 +244,7 @@ IdentitiesOnly       yes
 IdentityFile         $keyfile
 User                 git
 ProxyCommand         nc -X 5 -x 127.0.0.1:9050 %h %p
+
 "@
 
         Add-Content -Path $config -Value $configContent
