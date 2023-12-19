@@ -13,7 +13,11 @@
 		"customizations": {
 			// Configure properties specific to VS Code.
 				"vscode": {
-					"settings": {},
+					"settings": {
+						"hadolint.hadolintPath": "/usr/local/bin/hadolint",
+						"shellformat.path": "/usr/local/bin/shfmt",
+						"powershell.codeFormatting.preset": "OTBS"
+					},
 					"extensions": [
 					"ms-vscode.powershell",
 					"rogalmic.bash-debug"
