@@ -25,7 +25,14 @@ function keygen {
         $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-C$COMMENT")
     }
 
-    if (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and $PSVersionTable.Platform -eq 'Win32NT') {
+    if (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and
+        (
+            [System.Environment]::OSVersion.Platform -eq 'Win32NT' -or
+            $PSVersionTable.Platform -eq 'Win32NT' -or
+            $null -eq $PSVersionTable.Platform
+        )
+    ) {
+        # if (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and $PSVersionTable.Platform -eq 'Win32NT') {
         # We are on Windows
         $sshPath = "$env:SYSTEMROOT\System32\OpenSSH\ssh.exe"
         # $ncPath = "$env:SYSTEMROOT\System32\OpenSSH\nc.exe"
@@ -132,7 +139,13 @@ function keygen {
                 Remove-Variable -Name SSHPASS -ErrorAction SilentlyContinue -Scope Global
             }
         }
-    } elseif ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.Platform -eq 'Unix') {
+    } elseif (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and
+        (
+            [System.Environment]::OSVersion.Platform -eq 'Unix' -or
+            $PSVersionTable.Platform -eq 'Unix'
+        )
+    ) {
+        # } elseif ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.Platform -eq 'Unix') {
         # We are on Linux
         $sshPath = "/usr/bin/ssh"
         $ncPath = "/usr/bin/nc"
