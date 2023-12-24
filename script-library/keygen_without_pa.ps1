@@ -26,7 +26,13 @@ function keygen_without_p {
         $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-C$COMMENT")
     }
 
-    if (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and $PSVersionTable.Platform -eq 'Win32NT') {
+    if (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and
+        (
+            [System.Environment]::OSVersion.Platform -eq 'Win32NT' -or
+            $PSVersionTable.Platform -eq 'Win32NT' -or
+            $null -eq $PSVersionTable.Platform
+        )
+    ) {
         # We are on Windows
         $sshPath = "$env:SYSTEMROOT\System32\OpenSSH\ssh.exe"
         # $ncPath = "$env:SYSTEMROOT\System32\OpenSSH\nc.exe"
@@ -222,7 +228,13 @@ function keygen_without_p {
         $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-C$COMMENT")
     }
 
-    if (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and $PSVersionTable.Platform -eq 'Win32NT') {
+    if (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and
+        (
+            [System.Environment]::OSVersion.Platform -eq 'Win32NT' -or
+            $PSVersionTable.Platform -eq 'Win32NT' -or
+            $null -eq $PSVersionTable.Platform
+        )
+    ) {
         # We are on Windows
         $sshPath = "$env:SYSTEMROOT\System32\OpenSSH\ssh.exe"
         # $ncPath = "$env:SYSTEMROOT\System32\OpenSSH\nc.exe"
