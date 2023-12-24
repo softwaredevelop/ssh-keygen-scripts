@@ -105,10 +105,15 @@ function keygen_without_p {
                 Remove-Variable -Name SSHPASS -ErrorAction SilentlyContinue -Scope Global
             }
         }
-    } elseif ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.Platform -eq 'Unix') {
+    } elseif (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and
+        (
+            [System.Environment]::OSVersion.Platform -eq 'Unix' -or
+            $PSVersionTable.Platform -eq 'Unix'
+        )
+    ) {
         # We are on Linux
         $sshPath = "/usr/bin/ssh"
-        $ncPath = "/usr/bin/nc"
+        $ncatPath = "/usr/bin/ncat"
 
         # Install openssh client if not already installed
         if (-not (Test-Path $sshPath)) {
@@ -118,11 +123,11 @@ function keygen_without_p {
             }
         }
 
-        # Install netcat if not already installed
-        if (-not (Test-Path $ncPath)) {
+        # Install ncat if not already installed
+        if (-not (Test-Path $ncatPath)) {
             Invoke-Command -ScriptBlock {
                 sudo apt-get update
-                sudo apt-get install --no-install-recommends --assume-yes netcat-openbsd
+                sudo apt-get install --no-install-recommends --assume-yes ncat
             }
         }
 
@@ -178,7 +183,7 @@ Hostname             $REMOTE_HOSTNAME
 IdentitiesOnly       yes
 IdentityFile         $keyfile
 User                 git
-ProxyCommand         nc -X 5 -x 127.0.0.1:9050 %h %p
+ProxyCommand         ncat --proxy 127.0.0.1:9050 --proxy-type socks5 %h %p
 
 "@
 
@@ -296,10 +301,15 @@ function keygen_without_p {
                 Remove-Variable -Name SSHPASS -ErrorAction SilentlyContinue -Scope Global
             }
         }
-    } elseif ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.Platform -eq 'Unix') {
+    } elseif (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and
+        (
+            [System.Environment]::OSVersion.Platform -eq 'Unix' -or
+            $PSVersionTable.Platform -eq 'Unix'
+        )
+    ) {
         # We are on Linux
         $sshPath = "/usr/bin/ssh"
-        $ncPath = "/usr/bin/nc"
+        $ncatPath = "/usr/bin/ncat"
 
         # Install openssh client if not already installed
         if (-not (Test-Path $sshPath)) {
@@ -309,11 +319,11 @@ function keygen_without_p {
             }
         }
 
-        # Install netcat if not already installed
-        if (-not (Test-Path $ncPath)) {
+        # Install ncat if not already installed
+        if (-not (Test-Path $ncatPath)) {
             Invoke-Command -ScriptBlock {
                 sudo apt-get update
-                sudo apt-get install --no-install-recommends --assume-yes netcat-openbsd
+                sudo apt-get install --no-install-recommends --assume-yes ncat
             }
         }
 
@@ -369,7 +379,7 @@ Hostname             $REMOTE_HOSTNAME
 IdentitiesOnly       yes
 IdentityFile         $keyfile
 User                 git
-ProxyCommand         nc -X 5 -x 127.0.0.1:9050 %h %p
+ProxyCommand         ncat --proxy 127.0.0.1:9050 --proxy-type socks5 %h %p
 
 "@
 
