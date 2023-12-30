@@ -7,7 +7,7 @@ function keygen {
     $RSA_KEYLENGTH = 4096
     $ECDSA_KEYLENGTH = 521
 
-    $KDF = Get-Random -Minimum 16 -Maximum 27
+    $KDF = Get-SecureRandom -Minimum 16 -Maximum 27
 
     $REMOTE_HOSTNAME = if ($args[0]) { $args[0] } else { "gh" }
     $REMOTE_USER = if ($args[1]) { $args[1] } else { "ghuser" }
@@ -46,7 +46,7 @@ function keygen {
     }
 
     # Generate a random password for SSH
-    $SSHPASS = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
+    $SSHPASS = -join ((65..90) + (97..122) + (48..57) | Get-SecureRandom -Count 32 | ForEach-Object { [char]$_ })
 
     # Get the hostname of the machine
     $hostname = (Invoke-Command { hostname }).Trim()
@@ -78,7 +78,7 @@ function keygen {
 
     # Get the hostname of the machine
     $hostname = (Invoke-Command { hostname }).Trim()
-    $hash = -join ((0..9) + ('a'..'f') | Get-Random -Count 6)
+    $hash = -join ((0..9) + ('a'..'z') | Get-SecureRandom -Count 6)
     $KEYNAME = "$REMOTE_HOSTNAME.$REMOTE_USER" + "_" + $hostname + "_" + $hash
 
     # Check if ssh-keygen exists and .ssh directory exists
@@ -135,7 +135,7 @@ function keygen {
     $RSA_KEYLENGTH = 4096
     $ECDSA_KEYLENGTH = 521
 
-    $KDF = Get-Random -Minimum 16 -Maximum 27
+    $KDF = Get-SecureRandom -Minimum 16 -Maximum 27
 
     $REMOTE_HOSTNAME = if ($args[0]) { $args[0] } else { "gh" }
     $REMOTE_USER = if ($args[1]) { $args[1] } else { "ghuser" }
@@ -174,7 +174,7 @@ function keygen {
     }
 
     # Generate a random password for SSH
-    $SSHPASS = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
+    $SSHPASS = -join ((65..90) + (97..122) + (48..57) | Get-SecureRandom -Count 32 | ForEach-Object { [char]$_ })
 
     # Get the hostname of the machine
     $hostname = (Invoke-Command { hostname }).Trim()
@@ -206,7 +206,7 @@ function keygen {
 
     # Get the hostname of the machine
     $hostname = (Invoke-Command { hostname }).Trim()
-    $hash = -join ((0..9) + ('a'..'f') | Get-Random -Count 6)
+    $hash = -join ((0..9) + ('a'..'z') | Get-SecureRandom -Count 6)
     $KEYNAME = "$REMOTE_HOSTNAME.$REMOTE_USER" + "_" + $hostname + "_" + $hash
 
     # Check if ssh-keygen exists and .ssh directory exists
