@@ -25,17 +25,17 @@ function keygen {
         $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-C$COMMENT")
     }
 
-    if (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and
+    if (($PSVersionTable.PSEdition -eq 'Desktop') -and
         (
             [System.Environment]::OSVersion.Platform -eq 'Win32NT' -or
             $PSVersionTable.Platform -eq 'Win32NT' -or
             $null -eq $PSVersionTable.Platform
         )
     ) {
-        # if (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and $PSVersionTable.Platform -eq 'Win32NT') {
         # We are on Windows
         $sshPath = "$env:SYSTEMROOT\System32\OpenSSH\ssh.exe"
-        # $ncPath = "$env:SYSTEMROOT\System32\OpenSSH\nc.exe"
+        $ncatPath = "C:\Program Files (x86)\Nmap\ncat.exe"
+        $gsudoPath = "C:\Program Files\gsudo\Current\gsudo.exe"
         Set-ExecutionPolicy RemoteSigned -Scope Process
 
         # Install openssh client if not already installed
@@ -43,18 +43,27 @@ function keygen {
             Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
         }
 
-        # # Install netcat if not already installed
-        # if (-not (Test-Path $ncPath)) {
-        #     Invoke-Command -ScriptBlock {
-        #         sudo apt-get update
-        #         sudo apt-get install --no-install-recommends --assume-yes netcat-openbsd
-        #     }
-        # }
+        # Define the path to the winget executable
+        $wingetPath = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
+        # Check if winget is installed
+        if (-not (Test-Path $wingetPath)) {
+            # Winget is not installed, install it
+            Add-AppxPackage -Path "https://aka.ms/installwinget"
+        }
+
+        # Install Nmap if not already installed
+        if (-not (Test-Path $ncatPath)) {
+            winget install --id=Insecure.Nmap
+        }
+
+        # Install gsudo if not already installed
+        if (-not (Test-Path $gsudoPath)) {
+            winget install --id=gerardog.gsudo
+        }
 
         # Generate a random password for SSH
+        Add-Type -AssemblyName System.Web
         $SSHPASS = [System.Web.Security.Membership]::GeneratePassword(32, 4)
-        # $SSHPASS = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
-        # $SSHPASS = -join ((33..126) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
 
         # Set the path to the .ssh directory
         $sshDirPath = Join-Path -Path $env:USERPROFILE -ChildPath ".ssh"
@@ -70,23 +79,31 @@ function keygen {
         }
 
         # Set permissions to 700 (Owner can read, write and execute)
-        # On Windows, use icacls command to set permissions
-        # Invoke-Command -ScriptBlock { icacls $sshDirPath /grant:r "$($env:USERNAME):(OI)(CI)F" /T }
         $sshDirPathAcl = Get-Acl -Path $sshDirPath
         foreach ($accessRule in $sshDirPathAcl.Access) {
             $sshDirPathAcl.RemoveAccessRule($accessRule)
         }
-        $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($env:USERNAME, "FullControl", "Allow")
+        $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($env:USERNAME, "FullControl", "Allow")
         $sshDirPathAcl.AddAccessRule($accessRule)
         Set-Acl -Path $sshDirPath -AclObject $sshDirPathAcl
 
         # Get the hostname of the machine
         $hostname = $env:COMPUTERNAME
-        $hash = -join ((0..9) + ('a'..'f') | Get-Random -Count 6)
+        $chars = @(
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+            'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+            'u', 'v', 'w', 'x', 'y', 'z'
+        )
+        $hash = -join (1..6 | ForEach-Object { $chars[(Get-Random -Maximum $chars.Length)] })
         $KEYNAME = "$REMOTE_HOSTNAME.$REMOTE_USER" + "_" + $hostname + "_" + $hash
 
         # Check if ssh-keygen exists and .ssh directory exists
         if ((Get-Command ssh-keygen -ErrorAction SilentlyContinue) -and (Test-Path -Path $sshDirPath)) {
+            function Test-Admin {
+                $currentUser = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+                $currentUser.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+            }
             # Check if SSHPASS and KEYNAME are not null
             if ($null -ne $SSHPASS -and $null -ne $KEYNAME) {
                 $pwFilePath = Join-Path -Path $pwPath -ChildPath "pw_$KEYNAME"
@@ -102,7 +119,7 @@ function keygen {
                 foreach ($accessRule in $pwFilePathAcl.Access) {
                     $pwFilePathAcl.RemoveAccessRule($accessRule)
                 }
-                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($env:USERNAME, "Read", "Allow")
+                $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($env:USERNAME, "Read", "Allow")
                 $pwFilePathAcl.SetAccessRule($accessRule)
                 Set-Acl -Path $pwFilePath -AclObject $pwFilePathAcl
 
@@ -115,25 +132,37 @@ function keygen {
                 foreach ($accessRule in $keyfileAcl.Access) {
                     $keyfileAcl.RemoveAccessRule($accessRule)
                 }
-                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($env:USERNAME, "Read, Write", "Allow")
+                $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($env:USERNAME, "Read, Write", "Allow")
                 $keyfileAcl.AddAccessRule($accessRule)
-                Set-Acl -Path $keyfile -AclObject $acl
+                if ((Test-Admin) -eq $false) {
+                    Invoke-Gsudo {
+                        Set-Acl -Path $using:keyfile -AclObject $using:keyfileAcl
+                    }
+                } else {
+                    Set-Acl -Path $keyfile -AclObject $keyfileAcl
+                }
 
                 # Set "$keyfile.pub" permissions to 644
                 # Get the existing ACL
                 $keyfilePubAcl = Get-Acl -Path "$keyfile.pub"
                 # Remove all existing access rules
                 foreach ($accessRule in $keyfilePubAcl.Access) {
-                    $acl.RemoveAccessRule($accessRule)
+                    $keyfilePubAcl.RemoveAccessRule($accessRule)
                 }
                 # Add a new access rule for the current user with Read and Write permissions
-                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($env:USERNAME, "Read, Write", "Allow")
+                $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($env:USERNAME, "Read, Write", "Allow")
                 $keyfilePubAcl.AddAccessRule($accessRule)
                 # Add a new access rule for the 'Users' group with Read permissions
-                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Users", "Read", "Allow")
+                $sid = [System.Security.Principal.SecurityIdentifier]::new("S-1-1-0")
+                $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($sid, "Read", "Allow")
                 $keyfilePubAcl.AddAccessRule($accessRule)
-                # Set the new ACL
-                Set-Acl -Path "$keyfile.pub" -AclObject $keyfilePubAcl
+                if ((Test-Admin) -eq $false) {
+                    Invoke-Gsudo {
+                        Set-Acl -Path "$using:keyfile.pub" -AclObject $using:keyfilePubAcl
+                    }
+                } else {
+                    Set-Acl -Path "$keyfile.pub" -AclObject $keyfilePubAcl
+                }
 
                 # Remove SSHPASS environment variable
                 Remove-Variable -Name SSHPASS -ErrorAction SilentlyContinue -Scope Global
@@ -145,7 +174,6 @@ function keygen {
             $PSVersionTable.Platform -eq 'Unix'
         )
     ) {
-        # } elseif ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.Platform -eq 'Unix') {
         # We are on Linux
         $sshPath = "/usr/bin/ssh"
         $ncatPath = "/usr/bin/ncat"
@@ -167,8 +195,7 @@ function keygen {
         }
 
         # Generate a random password for SSH
-        $SSHPASS = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
-        # $SSHPASS = -join ((33..126) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
+        $SSHPASS = -join ((65..90) + (97..122) + (48..57) | Get-SecureRandom -Count 32 | ForEach-Object { [char]$_ })
 
         # Set the path to the .ssh directory
         $sshDirPath = Join-Path -Path $env:HOME -ChildPath ".ssh"
@@ -277,17 +304,17 @@ function keygen {
         $KEYOPT = @("-a$KDF", "-t$KEYTYPE", "-C$COMMENT")
     }
 
-    if (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and
+    if (($PSVersionTable.PSEdition -eq 'Desktop') -and
         (
             [System.Environment]::OSVersion.Platform -eq 'Win32NT' -or
             $PSVersionTable.Platform -eq 'Win32NT' -or
             $null -eq $PSVersionTable.Platform
         )
     ) {
-        # if (($PSVersionTable.PSEdition -eq 'Desktop' -or $PSVersionTable.PSEdition -eq 'Core') -and $PSVersionTable.Platform -eq 'Win32NT') {
         # We are on Windows
         $sshPath = "$env:SYSTEMROOT\System32\OpenSSH\ssh.exe"
-        # $ncPath = "$env:SYSTEMROOT\System32\OpenSSH\nc.exe"
+        $ncatPath = "C:\Program Files (x86)\Nmap\ncat.exe"
+        $gsudoPath = "C:\Program Files\gsudo\Current\gsudo.exe"
         Set-ExecutionPolicy RemoteSigned -Scope Process
 
         # Install openssh client if not already installed
@@ -295,18 +322,27 @@ function keygen {
             Add-WindowsCapability -Online -Name OpenSSH.Client~~~~0.0.1.0
         }
 
-        # # Install netcat if not already installed
-        # if (-not (Test-Path $ncPath)) {
-        #     Invoke-Command -ScriptBlock {
-        #         sudo apt-get update
-        #         sudo apt-get install --no-install-recommends --assume-yes netcat-openbsd
-        #     }
-        # }
+        # Define the path to the winget executable
+        $wingetPath = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
+        # Check if winget is installed
+        if (-not (Test-Path $wingetPath)) {
+            # Winget is not installed, install it
+            Add-AppxPackage -Path "https://aka.ms/installwinget"
+        }
+
+        # Install Nmap if not already installed
+        if (-not (Test-Path $ncatPath)) {
+            winget install --id=Insecure.Nmap
+        }
+
+        # Install gsudo if not already installed
+        if (-not (Test-Path $gsudoPath)) {
+            winget install --id=gerardog.gsudo
+        }
 
         # Generate a random password for SSH
+        Add-Type -AssemblyName System.Web
         $SSHPASS = [System.Web.Security.Membership]::GeneratePassword(32, 4)
-        # $SSHPASS = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
-        # $SSHPASS = -join ((33..126) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
 
         # Set the path to the .ssh directory
         $sshDirPath = Join-Path -Path $env:USERPROFILE -ChildPath ".ssh"
@@ -322,23 +358,31 @@ function keygen {
         }
 
         # Set permissions to 700 (Owner can read, write and execute)
-        # On Windows, use icacls command to set permissions
-        # Invoke-Command -ScriptBlock { icacls $sshDirPath /grant:r "$($env:USERNAME):(OI)(CI)F" /T }
         $sshDirPathAcl = Get-Acl -Path $sshDirPath
         foreach ($accessRule in $sshDirPathAcl.Access) {
             $sshDirPathAcl.RemoveAccessRule($accessRule)
         }
-        $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($env:USERNAME, "FullControl", "Allow")
+        $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($env:USERNAME, "FullControl", "Allow")
         $sshDirPathAcl.AddAccessRule($accessRule)
         Set-Acl -Path $sshDirPath -AclObject $sshDirPathAcl
 
         # Get the hostname of the machine
         $hostname = $env:COMPUTERNAME
-        $hash = -join ((0..9) + ('a'..'f') | Get-Random -Count 6)
+        $chars = @(
+            0, 1, 2, 3, 4, 5, 6, 7, 8, 9,
+            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+            'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+            'u', 'v', 'w', 'x', 'y', 'z'
+        )
+        $hash = -join (1..6 | ForEach-Object { $chars[(Get-Random -Maximum $chars.Length)] })
         $KEYNAME = "$REMOTE_HOSTNAME.$REMOTE_USER" + "_" + $hostname + "_" + $hash
 
         # Check if ssh-keygen exists and .ssh directory exists
         if ((Get-Command ssh-keygen -ErrorAction SilentlyContinue) -and (Test-Path -Path $sshDirPath)) {
+            function Test-Admin {
+                $currentUser = [Security.Principal.WindowsPrincipal]::new([Security.Principal.WindowsIdentity]::GetCurrent())
+                $currentUser.IsInRole([Security.Principal.WindowsBuiltinRole]::Administrator)
+            }
             # Check if SSHPASS and KEYNAME are not null
             if ($null -ne $SSHPASS -and $null -ne $KEYNAME) {
                 $pwFilePath = Join-Path -Path $pwPath -ChildPath "pw_$KEYNAME"
@@ -354,7 +398,7 @@ function keygen {
                 foreach ($accessRule in $pwFilePathAcl.Access) {
                     $pwFilePathAcl.RemoveAccessRule($accessRule)
                 }
-                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($env:USERNAME, "Read", "Allow")
+                $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($env:USERNAME, "Read", "Allow")
                 $pwFilePathAcl.SetAccessRule($accessRule)
                 Set-Acl -Path $pwFilePath -AclObject $pwFilePathAcl
 
@@ -367,25 +411,37 @@ function keygen {
                 foreach ($accessRule in $keyfileAcl.Access) {
                     $keyfileAcl.RemoveAccessRule($accessRule)
                 }
-                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($env:USERNAME, "Read, Write", "Allow")
+                $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($env:USERNAME, "Read, Write", "Allow")
                 $keyfileAcl.AddAccessRule($accessRule)
-                Set-Acl -Path $keyfile -AclObject $acl
+                if ((Test-Admin) -eq $false) {
+                    Invoke-Gsudo {
+                        Set-Acl -Path $using:keyfile -AclObject $using:keyfileAcl
+                    }
+                } else {
+                    Set-Acl -Path $keyfile -AclObject $keyfileAcl
+                }
 
                 # Set "$keyfile.pub" permissions to 644
                 # Get the existing ACL
                 $keyfilePubAcl = Get-Acl -Path "$keyfile.pub"
                 # Remove all existing access rules
                 foreach ($accessRule in $keyfilePubAcl.Access) {
-                    $acl.RemoveAccessRule($accessRule)
+                    $keyfilePubAcl.RemoveAccessRule($accessRule)
                 }
                 # Add a new access rule for the current user with Read and Write permissions
-                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule($env:USERNAME, "Read, Write", "Allow")
+                $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($env:USERNAME, "Read, Write", "Allow")
                 $keyfilePubAcl.AddAccessRule($accessRule)
                 # Add a new access rule for the 'Users' group with Read permissions
-                $accessRule = New-Object System.Security.AccessControl.FileSystemAccessRule("Users", "Read", "Allow")
+                $sid = [System.Security.Principal.SecurityIdentifier]::new("S-1-1-0")
+                $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($sid, "Read", "Allow")
                 $keyfilePubAcl.AddAccessRule($accessRule)
-                # Set the new ACL
-                Set-Acl -Path "$keyfile.pub" -AclObject $keyfilePubAcl
+                if ((Test-Admin) -eq $false) {
+                    Invoke-Gsudo {
+                        Set-Acl -Path "$using:keyfile.pub" -AclObject $using:keyfilePubAcl
+                    }
+                } else {
+                    Set-Acl -Path "$keyfile.pub" -AclObject $keyfilePubAcl
+                }
 
                 # Remove SSHPASS environment variable
                 Remove-Variable -Name SSHPASS -ErrorAction SilentlyContinue -Scope Global
@@ -397,7 +453,6 @@ function keygen {
             $PSVersionTable.Platform -eq 'Unix'
         )
     ) {
-        # } elseif ($PSVersionTable.PSEdition -eq 'Core' -and $PSVersionTable.Platform -eq 'Unix') {
         # We are on Linux
         $sshPath = "/usr/bin/ssh"
         $ncatPath = "/usr/bin/ncat"
@@ -419,8 +474,7 @@ function keygen {
         }
 
         # Generate a random password for SSH
-        $SSHPASS = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
-        # $SSHPASS = -join ((33..126) | Get-Random -Count 32 | ForEach-Object { [char]$_ })
+        $SSHPASS = -join ((65..90) + (97..122) + (48..57) | Get-SecureRandom -Count 32 | ForEach-Object { [char]$_ })
 
         # Set the path to the .ssh directory
         $sshDirPath = Join-Path -Path $env:HOME -ChildPath ".ssh"
