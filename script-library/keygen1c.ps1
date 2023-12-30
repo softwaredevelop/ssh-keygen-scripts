@@ -224,7 +224,7 @@ function keygen {
 
         # Get the hostname of the machine
         $hostname = (Invoke-Command { hostname }).Trim()
-        $hash = -join ((0..9) + ('a'..'f') | Get-Random -Count 6)
+        $hash = -join ((0..9) + ('a'..'z') | Get-SecureRandom -Count 6)
         $KEYNAME = "$REMOTE_HOSTNAME.$REMOTE_USER" + "_" + $hostname + "_" + $hash
 
         # Check if ssh-keygen exists and .ssh directory exists
@@ -503,7 +503,7 @@ function keygen {
 
         # Get the hostname of the machine
         $hostname = (Invoke-Command { hostname }).Trim()
-        $hash = -join ((0..9) + ('a'..'f') | Get-Random -Count 6)
+        $hash = -join ((0..9) + ('a'..'z') | Get-SecureRandom -Count 6)
         $KEYNAME = "$REMOTE_HOSTNAME.$REMOTE_USER" + "_" + $hostname + "_" + $hash
 
         # Check if ssh-keygen exists and .ssh directory exists
