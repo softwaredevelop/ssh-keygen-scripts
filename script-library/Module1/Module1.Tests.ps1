@@ -14,7 +14,8 @@ BeforeAll {
 
     $moduleName = (Split-Path -Path $PSCommandPath -Leaf).Replace(".Tests.ps1", "")
     $loadedModule = Get-Module -Name $moduleName
-    if ($loadedModule) {
+    if ($loadedModule)
+    {
         Remove-Module -Name $moduleName -Force
     }
     $modulePath = $PSCommandPath.Replace(".Tests.ps1", ".psm1")
@@ -26,7 +27,8 @@ BeforeAll {
 Describe "Internal functions" {
     Get-Module TestModule | Remove-Module
     New-Module -Name TestModule {
-        function Test-Function {
+        function Test-Function
+        {
             <#
         .SYNOPSIS
         This function is used to test the Test-Function.
@@ -46,7 +48,8 @@ Describe "Internal functions" {
         }
         Export-ModuleMember -Function "Test-Function"
 
-        function Test-FunctionInternal {
+        function Test-FunctionInternal
+        {
             Write-Output "Test-FunctionInternal"
         }
     } | Import-Module -Force
@@ -116,9 +119,11 @@ Describe "Test-IsAdminWindows" {
         }
 
         It "When running the Test-IsAdminWindows internal function without administrator privileges" {
-            if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+            if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
+            {
                 Test-IsAdminWindows | Should -BeTrue
-            } else {
+            } else
+            {
                 Test-IsAdminWindows | Should -BeFalse
             }
         }
@@ -165,17 +170,32 @@ Describe "Update-System" {
         Get-Command -Name Update-System | Should -HaveParameter -ParameterName Update
     }
 
-    It "Does not throw an error when the Update parameter is provided and the user is an admin" {
+    Context "Testing Update-System function with mocked tests" {
         InModuleScope -ModuleName "Module1" {
-            Mock Test-IsAdminWindows { return $true }
-            Mock Invoke-Expression {}
-            Mock Write-Host {}
+            BeforeEach {
+                Mock -CommandName Test-IsAdminWindows -MockWith { return $true }
+                Mock -CommandName Get-WindowsUpdate -MockWith { return @() }
+                Mock -CommandName Write-Host -MockWith {}
+            }
+            It "Returns no updates if Get-WindowsUpdate returns no updates" {
+                Update-System -Update "WindowsUpdate" | Should -Be @()
 
-            { Update-System -Update "WindowsUpdate" } | Should -Not -Throw
+                Should -Invoke -CommandName Test-IsAdminWindows -Exactly 1 -Scope It
+                Should -Invoke -CommandName Get-WindowsUpdate -Exactly 1 -Scope It
+                Should -Invoke -CommandName Write-Host -Exactly 1 -Scope It
+            }
 
-            Should -Invoke Test-IsAdminWindows -Exactly 1 -Scope It
-            Should -Invoke Invoke-Expression -Exactly 1 -Scope It
-            Should -Invoke Write-Host -Exactly 1 -Scope It
+            It "Returns updates if Get-WindowsUpdate returns updates" {
+                Mock -CommandName Get-WindowsUpdate -MockWith { return @("Update1") }
+                Mock -CommandName Install-WindowsUpdate -MockWith {}
+
+                Update-System -Update "WindowsUpdate" | Should -BeNullOrEmpty
+
+                Should -Invoke -CommandName Test-IsAdminWindows -Exactly 1 -Scope It
+                Should -Invoke -CommandName Get-WindowsUpdate -Exactly 1 -Scope It
+                Should -Invoke -CommandName Install-WindowsUpdate -Exactly 1 -Scope It
+                Should -Invoke -CommandName Write-Host -Exactly 1 -Scope It
+            }
         }
     }
 }
@@ -331,7 +351,8 @@ Describe "New-DirectoryIfNotExists" {
             }
 
             AfterEach {
-                if (Test-Path $testDir) {
+                if (Test-Path $testDir)
+                {
                     Remove-Item -Path $testDir -Recurse -Force
                 }
             }
@@ -404,7 +425,8 @@ Describe "Set-Permissions" {
             }
 
             AfterEach {
-                if (Test-Path $tempFile.FullName) {
+                if (Test-Path $tempFile.FullName)
+                {
                     Remove-Item -Path $tempFile.FullName -Force
                 }
             }
