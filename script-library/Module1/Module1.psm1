@@ -1,4 +1,5 @@
-function Get-HelloWorld {
+function Get-HelloWorld
+{
     <#
 .SYNOPSIS
 This function returns the string "Hello World".
@@ -14,7 +15,8 @@ Outputs: "Hello World"
 }
 Export-ModuleMember -Function "Get-HelloWorld"
 
-function Get-InternalHelloWorld {
+function Get-InternalHelloWorld
+{
     <#
 .SYNOPSIS
     Retrieves the internal "Hello World" message.
@@ -29,7 +31,8 @@ function Get-InternalHelloWorld {
     Write-Output "Internal Hello World"
 }
 
-function Test-IsAdminWindows {
+function Test-IsAdminWindows
+{
     <#
 .SYNOPSIS
 Checks if the current user is an administrator.
@@ -51,7 +54,8 @@ Returns $true if the current user is an administrator, otherwise returns $false.
     ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 }
 
-function Start-ServiceWithRetry {
+function Start-ServiceWithRetry
+{
     <#
 .SYNOPSIS
     Starts a service with retry attempts.
@@ -82,7 +86,8 @@ function Start-ServiceWithRetry {
         [int]$MaxRetries = 5
     )
 
-    if (-not (Test-IsAdminWindows)) {
+    if (-not (Test-IsAdminWindows))
+    {
         Write-Host "Error: This script must be run with administrator privileges1." -ForegroundColor Red
         Break
     }
@@ -90,66 +95,99 @@ function Start-ServiceWithRetry {
     $service = Get-Service -Name $ServiceName
     $retryCount = 0
 
-    while ($service.Status -ne 'Running' -and $retryCount -lt $MaxRetries) {
-        try {
+    while ($service.Status -ne 'Running' -and $retryCount -lt $MaxRetries)
+    {
+        try
+        {
             Set-Service -Name $ServiceName -Status Running -ErrorAction Stop
-        } catch {
+        } catch
+        {
             Write-Output "Failed to start service. Retrying in 5 seconds..."
             Start-Sleep -Seconds 5
             $retryCount++
-        } finally {
+        } finally
+        {
             $service = Get-Service -Name $ServiceName
         }
     }
 
-    if ($service.Status -eq 'Running') {
+    if ($service.Status -eq 'Running')
+    {
         Write-Output "Service is now running."
-    } else {
+    } else
+    {
         Write-Output "Failed to start service after $MaxRetries attempts."
     }
 }
 Export-ModuleMember -Function "Start-ServiceWithRetry"
 
-function Update-System {
+function Update-System
+{
     <#
 .SYNOPSIS
-    Checks for updates and installs them if available.
+    Updates the system by installing Windows updates.
 
 .DESCRIPTION
-    The Update-System function checks for Windows updates using the Get-WindowsUpdate cmdlet. If updates are available, it installs them using the Install-WindowsUpdate cmdlet. The script must be run with administrator privileges.
+    The Update-System function updates the system by installing Windows updates. It checks if the script is run with administrator privileges and then retrieves the available updates using the Get-WindowsUpdate cmdlet. If updates are found, it installs them using the Install-WindowsUpdate cmdlet.
 
 .PARAMETER Update
-    Specifies the type of update to check and install. Valid values are "WindowsUpdate" and "MicrosoftUpdate".
+    Specifies the type of updates to install. Valid values are "WindowsUpdate" and "MicrosoftUpdate". The default value is "WindowsUpdate".
 
 .EXAMPLE
     Update-System -Update "WindowsUpdate"
-    Checks for Windows updates and installs them if available.
+    Updates the system by installing Windows updates.
 
 .EXAMPLE
     Update-System -Update "MicrosoftUpdate"
-    Checks for Microsoft updates and installs them if available.
+    Updates the system by installing Microsoft updates.
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
         [string]$Update = "WindowsUpdate"
     )
 
-    if (-not (Test-IsAdminWindows)) {
+    if (-not (Test-IsAdminWindows))
+    {
         Write-Error -Message "Error: This script must be run with administrator privileges." -ErrorId "NotAdmin"
         Break
     }
 
-    $updates = Invoke-Expression ("Get-WindowsUpdate -" + $Update)
+    $commandParameters = @{
+        Verbose=$true
+    }
+    if ($Update -eq "WindowsUpdate" -or $Update -eq "MicrosoftUpdate")
+    {
+        $commandParameters[$Update] = $true
+    }
+    $parameters = @{
+        ScriptBlock = { Get-WindowsUpdate @commandParameters }
+    }
+    $updates = Invoke-Command @parameters
 
-    if ($updates.Count -gt 0) {
-        Invoke-Expression ("Install-WindowsUpdate -" + $Update + " -AcceptAll -IgnoreReboot")
-    } else {
+    if ($updates.Count -gt 0)
+    {
+        $commandParameters = @{
+            Verbose=$true
+            AcceptAll=$true
+            IgnoreReboot=$true
+        }
+        if ($Update -eq "WindowsUpdate" -or $Update -eq "MicrosoftUpdate")
+        {
+            $commandParameters[$Update] = $true
+        }
+        $parameters = @{
+            ScriptBlock = { Install-WindowsUpdate @commandParameters }
+        }
+        Invoke-Command @parameters
+    } else
+    {
         Write-Host "No updates available for ${Update}."
     }
 }
 Export-ModuleMember -Function "Update-System"
 
-function Install-GsudoWindows {
+function Install-GsudoWindows
+{
     <#
 .SYNOPSIS
 Installs Gsudo for Windows.
@@ -168,12 +206,14 @@ Install-GsudoWindows -gsudoPath "C:\Program Files\Gsudo\gsudo.exe"
         [Parameter(Mandatory = $true)]
         [string]$gsudoPath
     )
-    if (-not (Test-Path $gsudoPath)) {
+    if (-not (Test-Path $gsudoPath))
+    {
         winget install --id=gerardog.gsudo
     }
 }
 
-function Install-OpenSSHClientWindows {
+function Install-OpenSSHClientWindows
+{
     <#
 .SYNOPSIS
 Installs the OpenSSH client on Windows.
@@ -194,18 +234,22 @@ Installs the OpenSSH client using the specified path to the SSH executable.
         [Parameter(Mandatory = $true)]
         [string]$SshPath
     )
-    if (-not (Test-Path $SshPath)) {
-        if ((Test-IsAdminWindows) -eq $false) {
+    if (-not (Test-Path $SshPath))
+    {
+        if ((Test-IsAdminWindows) -eq $false)
+        {
             Invoke-Gsudo {
                 Add-WindowsCapability -Online -Name OpenSSH.Client~~~~
             }
-        } else {
+        } else
+        {
             Add-WindowsCapability -Online -Name OpenSSH.Client~~~~
         }
     }
 }
 
-function Install-NmapWindows {
+function Install-NmapWindows
+{
     <#
 .SYNOPSIS
 Installs Nmap on Windows if it is not already installed.
@@ -224,12 +268,14 @@ Install-NmapWindows -ncatPath "C:\Program Files\Nmap\ncat.exe"
         [Parameter(Mandatory = $true)]
         [string]$ncatPath
     )
-    if (-not (Test-Path $ncatPath)) {
+    if (-not (Test-Path $ncatPath))
+    {
         winget install --id=Insecure.Nmap
     }
 }
 
-function New-DirectoryIfNotExists {
+function New-DirectoryIfNotExists
+{
     <#
 .SYNOPSIS
 Creates a new directory if it does not already exist.
@@ -258,14 +304,17 @@ This example creates a new directory named "NewFolder" under the "C:\Temp" direc
 
     $fullPath = Join-Path -Path $Path -ChildPath $ChildPath
 
-    if (-not (Test-Path $fullPath)) {
+    if (-not (Test-Path $fullPath))
+    {
         New-Item -ItemType Directory -Force -Path $fullPath
-    } else {
+    } else
+    {
         Get-Item -Path $fullPath
     }
 }
 
-function Set-Permissions {
+function Set-Permissions
+{
     <#
 .SYNOPSIS
 Sets permissions for a specified item.
@@ -306,7 +355,8 @@ Sets the permissions for the specified file, granting read access to the user "D
     )
 
     $acl = Get-Acl -Path $Item
-    foreach ($accessRule in $acl.Access) {
+    foreach ($accessRule in $acl.Access)
+    {
         $acl.RemoveAccessRule($accessRule)
     }
     $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($IdentityReference, $FileSystemRights, $AccessControlType)
@@ -314,7 +364,8 @@ Sets the permissions for the specified file, granting read access to the user "D
     Set-Acl -Path $Item -AclObject $acl
 }
 
-function Set-SSHKeysPasswordProtected {
+function Set-SSHKeysPasswordProtected
+{
     <#
 .SYNOPSIS
 Generates password-protected SSH keys for a remote host.
@@ -347,7 +398,8 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
         [string]$Comment
     )
 
-    if (-not $Comment) {
+    if (-not $Comment)
+    {
         $Comment = "$RemoteUser@$RemoteHost"
     }
 
@@ -356,13 +408,16 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
 
     $Kdf = Get-Random -Minimum 16 -Maximum 27
 
-    if ($Keytype -eq "rsa") {
+    if ($Keytype -eq "rsa")
+    {
         $Id = "id_rsa_"
         $keyOptions = @("-a$Kdf", "-t$Keytype", "-b$rsaKeylength", "-C$Comment")
-    } elseif ($Keytype -eq "ecdsa") {
+    } elseif ($Keytype -eq "ecdsa")
+    {
         $Id = "id_ecdsa_"
         $keyOptions = @("-a$Kdf", "-t$Keytype", "-b$ecdsaKeylength", "-C$Comment")
-    } elseif ($Keytype -eq "ed25519") {
+    } elseif ($Keytype -eq "ed25519")
+    {
         $Id = "id_ed25519_"
         $keyOptions = @("-a$Kdf", "-t$Keytype", "-C$Comment")
     }
@@ -371,14 +426,16 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
         $PSVersionTable.Platform -eq 'Win32NT' -or
         [System.Environment]::OSVersion.Platform -eq 'Win32NT' -or
         $null -eq $PSVersionTable.Platform
-    ) {
+    )
+    {
         # We are on Windows
         Set-ExecutionPolicy RemoteSigned -Scope Process
 
         # Define the path to the winget executable
         $wingetPath = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
         # Check if winget is installed
-        if (-not (Test-Path $wingetPath)) {
+        if (-not (Test-Path $wingetPath))
+        {
             # Winget is not installed, exit the script
             Write-Host "Winget is not installed." -ForegroundColor Red
             Break
@@ -423,9 +480,11 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
         $keyName = "$RemoteHost.$RemoteUser" + "_" + $hostname + "_" + $hash
 
         # Check if ssh-keygen exists and .ssh directory exists
-        if ((Get-Command ssh-keygen -ErrorAction SilentlyContinue) -and (Test-Path -Path $sshDirPath.FullName) -and (Test-Path -Path $pwDirPath.FullName)) {
+        if ((Get-Command ssh-keygen -ErrorAction SilentlyContinue) -and (Test-Path -Path $sshDirPath.FullName) -and (Test-Path -Path $pwDirPath.FullName))
+        {
             # Check if sshPass and keyName are not null
-            if ($null -ne $sshPass -and $null -ne $keyName) {
+            if ($null -ne $sshPass -and $null -ne $keyName)
+            {
                 $pwFilePath = Join-Path -Path $pwDirPath.FullName -ChildPath "pw_$keyName"
 
                 # Write sshPass to pw file
@@ -440,17 +499,20 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
                 # Set $keyfile permissions to 600
                 # Get the existing ACL
                 $keyfileAcl = Get-Acl -Path $keyfile
-                foreach ($accessRule in $keyfileAcl.Access) {
+                foreach ($accessRule in $keyfileAcl.Access)
+                {
                     $keyfileAcl.RemoveAccessRule($accessRule)
                 }
                 $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($env:USERNAME, "Read, Write", "Allow")
                 $keyfileAcl.AddAccessRule($accessRule)
-                if ((Test-IsAdminWindows) -eq $false) {
+                if ((Test-IsAdminWindows) -eq $false)
+                {
                     Invoke-Gsudo {
                         Set-Acl -Path $using:keyfile -AclObject $using:keyfileAcl
                         # Set-Permissions -Item $using:keyfile -IdentityReference $env:USERNAME -FileSystemRights "Read, Write" -AccessControlType "Allow"
                     }
-                } else {
+                } else
+                {
                     Set-Acl -Path $keyfile -AclObject $keyfileAcl
                     # Set-Permissions -Item $keyfile -IdentityReference $env:USERNAME -FileSystemRights "Read, Write" -AccessControlType "Allow"
                 }
@@ -459,7 +521,8 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
                 # Get the existing ACL
                 $keyfilePubAcl = Get-Acl -Path "$keyfile.pub"
                 # Remove all existing access rules
-                foreach ($accessRule in $keyfilePubAcl.Access) {
+                foreach ($accessRule in $keyfilePubAcl.Access)
+                {
                     $keyfilePubAcl.RemoveAccessRule($accessRule)
                 }
                 # Add a new access rule for the current user with Read and Write permissions
@@ -469,11 +532,13 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
                 $sid = [System.Security.Principal.SecurityIdentifier]::new("S-1-1-0")
                 $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($sid, "Read", "Allow")
                 $keyfilePubAcl.AddAccessRule($accessRule)
-                if ((Test-IsAdminWindows) -eq $false) {
+                if ((Test-IsAdminWindows) -eq $false)
+                {
                     Invoke-Gsudo {
                         Set-Acl -Path "$using:keyfile.pub" -AclObject $using:keyfilePubAcl
                     }
-                } else {
+                } else
+                {
                     Set-Acl -Path "$keyfile.pub" -AclObject $keyfilePubAcl
                 }
 
@@ -486,13 +551,15 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
             $PSVersionTable.Platform -eq 'Unix' -or
             [System.Environment]::OSVersion.Platform -eq 'Unix'
         )
-    ) {
+    )
+    {
         # We are on Linux
         $sshPath = "/usr/bin/ssh"
         $ncatPath = "/usr/bin/ncat"
 
         # Install openssh client if not already installed
-        if (-not (Test-Path $sshPath)) {
+        if (-not (Test-Path $sshPath))
+        {
             Invoke-Command -ScriptBlock {
                 sudo apt-get update
                 sudo apt-get install --no-install-recommends --assume-yes openssh-client
@@ -500,7 +567,8 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
         }
 
         # Install ncat if not already installed
-        if (-not (Test-Path $ncatPath)) {
+        if (-not (Test-Path $ncatPath))
+        {
             Invoke-Command -ScriptBlock {
                 sudo apt-get update
                 sudo apt-get install --no-install-recommends --assume-yes ncat
@@ -513,13 +581,16 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
         # Set the path to the .ssh directory
         $sshDirPath = Join-Path -Path $env:HOME -ChildPath ".ssh"
         # Create .ssh directory if not already exists
-        if (-not (Test-Path $sshDirPath)) {
+        if (-not (Test-Path $sshDirPath))
+        {
             # On Linux, check if the filesystem is Btrfs
             $btrfsCommand = Get-Command btrfs -ErrorAction SilentlyContinue
-            if ((Invoke-Command { df --type=btrfs / }) -and $btrfsCommand) {
+            if ((Invoke-Command { df --type=btrfs / }) -and $btrfsCommand)
+            {
                 # If it is Btrfs, create a Btrfs subvolume
                 Invoke-Command { btrfs subvolume create $sshDirPath }
-            } else {
+            } else
+            {
                 # If it is not Btrfs or btrfs command doesn't exist, just create the directory
                 New-Item -ItemType Directory -Force -Path $sshDirPath
             }
@@ -527,7 +598,8 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
 
         # Check if .pw directory exists inside .ssh directory, if not, create it
         $pwPath = Join-Path -Path $sshDirPath -ChildPath ".pw"
-        if (-not (Test-Path $pwPath)) {
+        if (-not (Test-Path $pwPath))
+        {
             New-Item -ItemType Directory -Force -Path $pwPath
         }
 
@@ -541,12 +613,15 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
         $keyName = "$RemoteHost.$RemoteUser" + "_" + $hostname + "_" + $hash
 
         # Check if ssh-keygen exists and .ssh directory exists
-        if ((Get-Command ssh-keygen -ErrorAction SilentlyContinue) -and (Test-Path -Path $sshDirPath)) {
+        if ((Get-Command ssh-keygen -ErrorAction SilentlyContinue) -and (Test-Path -Path $sshDirPath))
+        {
             # Check if sshPass and keyName are not null
-            if ($null -ne $sshPass -and $null -ne $keyName) {
+            if ($null -ne $sshPass -and $null -ne $keyName)
+            {
                 $pwFilePath = Join-Path -Path $pwPath -ChildPath "pw_$keyName"
                 # Create .pw directory if it doesn't exist
-                if (!(Test-Path -Path $pwPath)) {
+                if (!(Test-Path -Path $pwPath))
+                {
                     New-Item -ItemType Directory -Force -Path $pwPath
                 }
 
@@ -573,7 +648,8 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
     # $config = Join-Path -Path $sshDirPath -ChildPath "config"
     $config = Join-Path -Path $sshDirPath.FullName -ChildPath "config"
 
-    if (Test-Path -Path $keyfile) {
+    if (Test-Path -Path $keyfile)
+    {
         $configContent = @"
 Host                 $RemoteHost.$RemoteUser
 Hostname             $RemoteHost
@@ -589,7 +665,8 @@ ProxyCommand         ncat --proxy 127.0.0.1:9050 --proxy-type socks5 %h %p
 }
 Export-ModuleMember -Function "Set-SSHKeysPasswordProtected"
 
-function Set-SSHKeysPasswordless {
+function Set-SSHKeysPasswordless
+{
     <#
 .SYNOPSIS
 Sets up passwordless SSH keys for a remote host.
@@ -622,7 +699,8 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
         [string]$Comment
     )
 
-    if (-not $Comment) {
+    if (-not $Comment)
+    {
         $Comment = "$RemoteUser@$RemoteHost"
     }
 
@@ -631,13 +709,16 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
 
     $Kdf = Get-Random -Minimum 16 -Maximum 27
 
-    if ($Keytype -eq "rsa") {
+    if ($Keytype -eq "rsa")
+    {
         $Id = "id_rsa_"
         $keyOptions = @("-a$Kdf", "-t$Keytype", "-b$rsaKeylength", "-C$Comment")
-    } elseif ($Keytype -eq "ecdsa") {
+    } elseif ($Keytype -eq "ecdsa")
+    {
         $Id = "id_ecdsa_"
         $keyOptions = @("-a$Kdf", "-t$Keytype", "-b$ecdsaKeylength", "-C$Comment")
-    } elseif ($Keytype -eq "ed25519") {
+    } elseif ($Keytype -eq "ed25519")
+    {
         $Id = "id_ed25519_"
         $keyOptions = @("-a$Kdf", "-t$Keytype", "-C$Comment")
     }
@@ -646,14 +727,16 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
         $PSVersionTable.Platform -eq 'Win32NT' -or
         [System.Environment]::OSVersion.Platform -eq 'Win32NT' -or
         $null -eq $PSVersionTable.Platform
-    ) {
+    )
+    {
         # We are on Windows
         Set-ExecutionPolicy RemoteSigned -Scope Process
 
         # Define the path to the winget executable
         $wingetPath = "$env:LOCALAPPDATA\Microsoft\WindowsApps\winget.exe"
         # Check if winget is installed
-        if (-not (Test-Path $wingetPath)) {
+        if (-not (Test-Path $wingetPath))
+        {
             # Winget is not installed, exit the script
             Write-Host "Winget is not installed." -ForegroundColor Red
             Break
@@ -692,26 +775,31 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
         $keyName = "$RemoteHost.$RemoteUser" + "_" + $hostname + "_" + $hash
 
         # Check if ssh-keygen exists and .ssh directory exists
-        if ((Get-Command ssh-keygen -ErrorAction SilentlyContinue) -and (Test-Path -Path $sshDirPath.FullName)) {
+        if ((Get-Command ssh-keygen -ErrorAction SilentlyContinue) -and (Test-Path -Path $sshDirPath.FullName))
+        {
             # Check if sshPass and keyName are not null
-            if ($sshPass -eq "" -and $null -ne $keyName) {
+            if ($sshPass -eq "" -and $null -ne $keyName)
+            {
                 # Run ssh-keygen
                 $keyfile = Join-Path -Path $sshDirPath.FullName -ChildPath "$Id$keyName.key"
                 ssh-keygen $keyOptions -f $keyfile -N $sshPass
                 # Set $keyfile permissions to 600
                 # Get the existing ACL
                 $keyfileAcl = Get-Acl -Path $keyfile
-                foreach ($accessRule in $keyfileAcl.Access) {
+                foreach ($accessRule in $keyfileAcl.Access)
+                {
                     $keyfileAcl.RemoveAccessRule($accessRule)
                 }
                 $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($env:USERNAME, "Read, Write", "Allow")
                 $keyfileAcl.AddAccessRule($accessRule)
-                if ((Test-IsAdminWindows) -eq $false) {
+                if ((Test-IsAdminWindows) -eq $false)
+                {
                     Invoke-Gsudo {
                         Set-Acl -Path $using:keyfile -AclObject $using:keyfileAcl
                         # Set-Permissions -Item $using:keyfile -IdentityReference $env:USERNAME -FileSystemRights "Read, Write" -AccessControlType "Allow"
                     }
-                } else {
+                } else
+                {
                     Set-Acl -Path $keyfile -AclObject $keyfileAcl
                     # Set-Permissions -Item $keyfile -IdentityReference $env:USERNAME -FileSystemRights "Read, Write" -AccessControlType "Allow"
                 }
@@ -720,7 +808,8 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
                 # Get the existing ACL
                 $keyfilePubAcl = Get-Acl -Path "$keyfile.pub"
                 # Remove all existing access rules
-                foreach ($accessRule in $keyfilePubAcl.Access) {
+                foreach ($accessRule in $keyfilePubAcl.Access)
+                {
                     $keyfilePubAcl.RemoveAccessRule($accessRule)
                 }
                 # Add a new access rule for the current user with Read and Write permissions
@@ -730,11 +819,13 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
                 $sid = [System.Security.Principal.SecurityIdentifier]::new("S-1-1-0")
                 $accessRule = [System.Security.AccessControl.FileSystemAccessRule]::new($sid, "Read", "Allow")
                 $keyfilePubAcl.AddAccessRule($accessRule)
-                if ((Test-IsAdminWindows) -eq $false) {
+                if ((Test-IsAdminWindows) -eq $false)
+                {
                     Invoke-Gsudo {
                         Set-Acl -Path "$using:keyfile.pub" -AclObject $using:keyfilePubAcl
                     }
-                } else {
+                } else
+                {
                     Set-Acl -Path "$keyfile.pub" -AclObject $keyfilePubAcl
                 }
 
@@ -747,13 +838,15 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
             $PSVersionTable.Platform -eq 'Unix' -or
             [System.Environment]::OSVersion.Platform -eq 'Unix'
         )
-    ) {
+    )
+    {
         # We are on Linux
         $sshPath = "/usr/bin/ssh"
         $ncatPath = "/usr/bin/ncat"
 
         # Install openssh client if not already installed
-        if (-not (Test-Path $sshPath)) {
+        if (-not (Test-Path $sshPath))
+        {
             Invoke-Command -ScriptBlock {
                 sudo apt-get update
                 sudo apt-get install --no-install-recommends --assume-yes openssh-client
@@ -761,7 +854,8 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
         }
 
         # Install ncat if not already installed
-        if (-not (Test-Path $ncatPath)) {
+        if (-not (Test-Path $ncatPath))
+        {
             Invoke-Command -ScriptBlock {
                 sudo apt-get update
                 sudo apt-get install --no-install-recommends --assume-yes ncat
@@ -774,13 +868,16 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
         # Set the path to the .ssh directory
         $sshDirPath = Join-Path -Path $env:HOME -ChildPath ".ssh"
         # Create .ssh directory if not already exists
-        if (-not (Test-Path $sshDirPath)) {
+        if (-not (Test-Path $sshDirPath))
+        {
             # On Linux, check if the filesystem is Btrfs
             $btrfsCommand = Get-Command btrfs -ErrorAction SilentlyContinue
-            if ((Invoke-Command { df --type=btrfs / }) -and $btrfsCommand) {
+            if ((Invoke-Command { df --type=btrfs / }) -and $btrfsCommand)
+            {
                 # If it is Btrfs, create a Btrfs subvolume
                 Invoke-Command { btrfs subvolume create $sshDirPath }
-            } else {
+            } else
+            {
                 # If it is not Btrfs or btrfs command doesn't exist, just create the directory
                 New-Item -ItemType Directory -Force -Path $sshDirPath
             }
@@ -788,7 +885,8 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
 
         # Check if .pw directory exists inside .ssh directory, if not, create it
         $pwPath = Join-Path -Path $sshDirPath -ChildPath ".pw"
-        if (-not (Test-Path $pwPath)) {
+        if (-not (Test-Path $pwPath))
+        {
             New-Item -ItemType Directory -Force -Path $pwPath
         }
 
@@ -802,12 +900,15 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
         $keyName = "$RemoteHost.$RemoteUser" + "_" + $hostname + "_" + $hash
 
         # Check if ssh-keygen exists and .ssh directory exists
-        if ((Get-Command ssh-keygen -ErrorAction SilentlyContinue) -and (Test-Path -Path $sshDirPath)) {
+        if ((Get-Command ssh-keygen -ErrorAction SilentlyContinue) -and (Test-Path -Path $sshDirPath))
+        {
             # Check if sshPass and keyName are not null
-            if ($null -ne $sshPass -and $null -ne $keyName) {
+            if ($null -ne $sshPass -and $null -ne $keyName)
+            {
                 $pwFilePath = Join-Path -Path $pwPath -ChildPath "pw_$keyName"
                 # Create .pw directory if it doesn't exist
-                if (!(Test-Path -Path $pwPath)) {
+                if (!(Test-Path -Path $pwPath))
+                {
                     New-Item -ItemType Directory -Force -Path $pwPath
                 }
 
@@ -834,7 +935,8 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
     # $config = Join-Path -Path $sshDirPath -ChildPath "config"
     $config = Join-Path -Path $sshDirPath.FullName -ChildPath "config"
 
-    if (Test-Path -Path $keyfile) {
+    if (Test-Path -Path $keyfile)
+    {
         $configContent = @"
 Host                 $RemoteHost.$RemoteUser
 Hostname             $RemoteHost
