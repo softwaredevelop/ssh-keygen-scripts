@@ -14,8 +14,7 @@ BeforeAll {
 
     $moduleName = (Split-Path -Path $PSCommandPath -Leaf).Replace(".Tests.ps1", "")
     $loadedModule = Get-Module -Name $moduleName
-    if ($loadedModule)
-    {
+    if ($loadedModule) {
         Remove-Module -Name $moduleName -Force
     }
     $modulePath = $PSCommandPath.Replace(".Tests.ps1", ".psm1")
@@ -27,8 +26,7 @@ BeforeAll {
 Describe "Internal functions" {
     Get-Module TestModule | Remove-Module
     New-Module -Name TestModule {
-        function Test-Function
-        {
+        function Test-Function {
             <#
         .SYNOPSIS
         This function is used to test the Test-Function.
@@ -48,8 +46,7 @@ Describe "Internal functions" {
         }
         Export-ModuleMember -Function "Test-Function"
 
-        function Test-FunctionInternal
-        {
+        function Test-FunctionInternal {
             Write-Output "Test-FunctionInternal"
         }
     } | Import-Module -Force
@@ -119,11 +116,9 @@ Describe "Test-IsAdminWindows" {
         }
 
         It "When running the Test-IsAdminWindows internal function without administrator privileges" {
-            if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator"))
-            {
+            if (([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
                 Test-IsAdminWindows | Should -BeTrue
-            } else
-            {
+            } else {
                 Test-IsAdminWindows | Should -BeFalse
             }
         }
@@ -351,8 +346,7 @@ Describe "New-DirectoryIfNotExists" {
             }
 
             AfterEach {
-                if (Test-Path $testDir)
-                {
+                if (Test-Path $testDir) {
                     Remove-Item -Path $testDir -Recurse -Force
                 }
             }
@@ -425,8 +419,7 @@ Describe "Set-Permissions" {
             }
 
             AfterEach {
-                if (Test-Path $tempFile.FullName)
-                {
+                if (Test-Path $tempFile.FullName) {
                     Remove-Item -Path $tempFile.FullName -Force
                 }
             }
