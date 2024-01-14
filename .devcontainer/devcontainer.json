@@ -14,9 +14,15 @@
 			// Configure properties specific to VS Code.
 				"vscode": {
 					"settings": {
+						"[powershell]": {
+							"editor.defaultFormatter": "ms-vscode.powershell",
+							"editor.formatOnSave": true
+						},
 						"hadolint.hadolintPath": "/usr/local/bin/hadolint",
 						"shellformat.path": "/usr/local/bin/shfmt",
-						"powershell.codeFormatting.preset": "OTBS"
+						"powershell.codeFormatting.openBraceOnSameLine": true,
+						"powershell.codeFormatting.preset": "OTBS",
+						"powershell.codeFormatting.whitespaceBeforeOpenBrace": true
 					},
 					"extensions": [
 					"ms-vscode.powershell",
