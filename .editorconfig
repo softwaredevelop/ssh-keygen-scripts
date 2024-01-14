@@ -19,3 +19,6 @@ indent_size = 2
 
 [devcontainer.json]
 indent_style = tab
+
+[*.{ps1,psm1}]
+max_line_length = 120
