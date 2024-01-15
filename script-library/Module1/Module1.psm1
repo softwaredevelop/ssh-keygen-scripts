@@ -429,7 +429,15 @@ This function requires administrative privileges on Windows to install dependenc
         Set-Permission -Item $pwDirPath.FullName -IdentityReference $env:USERNAME -FileSystemRights "FullControl" -AccessControlType "Allow"
 
         # Generate a random password for SSH
-        $sshPass = ConvertTo-SecureString -String $( -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object { [char]$_ })) -AsPlainText -Force
+        # $sshPass = ConvertTo-SecureString -String $( -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object { [char]$_ })) -AsPlainText -Force
+        $randomPassword = -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 10 | ForEach-Object { [char]$_ })
+        $salt = New-Object Byte[] 8
+        $random = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+        $random.GetBytes($salt)
+        $bytes = New-Object "System.Security.Cryptography.Rfc2898DeriveBytes" ($randomPassword, $salt, 1000)
+        $byteArray = $bytes.GetBytes(32)
+        $charArray = $byteArray | ForEach-Object { [char]($_ % 94 + 33) }
+        $sshPass = ConvertTo-SecureString -String ($charArray -join '') -AsPlainText -Force
 
         # Get the hostname of the machine
         $hostname = $env:COMPUTERNAME
