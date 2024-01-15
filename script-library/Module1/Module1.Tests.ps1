@@ -424,9 +424,9 @@ Describe "Set-Permission" {
     }
 }
 
-Describe "Set-SSHKeysPasswordProtected" {
-    It "The Set-SSHKeysPasswordProtected function should exist" {
-        { Get-Command -Name Set-SSHKeysPasswordProtected -ErrorAction Stop } | Should -Not -Throw
+Describe "Set-SSHKeyPasswordProtected" {
+    It "The Set-SSHKeyPasswordProtected function should exist" {
+        { Get-Command -Name Set-SSHKeyPasswordProtected -ErrorAction Stop } | Should -Not -Throw
     }
 
     It "Has a <parameter> parameter" -TestCases @(
@@ -435,7 +435,7 @@ Describe "Set-SSHKeysPasswordProtected" {
         @{ Parameter = "Keytype" }
         @{ Parameter = "Comment" }
     ) {
-        Get-Command -Name Set-SSHKeysPasswordProtected | Should -HaveParameter -ParameterName $parameter
+        Get-Command -Name Set-SSHKeyPasswordProtected | Should -HaveParameter -ParameterName $parameter
     }
 
     # Context "Ssh functions should exist" {
@@ -444,9 +444,9 @@ Describe "Set-SSHKeysPasswordProtected" {
     # }
 }
 
-Describe "Set-SSHKeysPasswordless" {
-    It "The Set-SSHKeysPasswordless function should exist" {
-        { Get-Command -Name Set-SSHKeysPasswordless -ErrorAction Stop } | Should -Not -Throw
+Describe "Set-SSHKeyPasswordless" {
+    It "The Set-SSHKeyPasswordless function should exist" {
+        { Get-Command -Name Set-SSHKeyPasswordless -ErrorAction Stop } | Should -Not -Throw
     }
 
     It "Has a <parameter> parameter" -TestCases @(
@@ -455,7 +455,7 @@ Describe "Set-SSHKeysPasswordless" {
         @{ Parameter = "Keytype" }
         @{ Parameter = "Comment" }
     ) {
-        Get-Command -Name Set-SSHKeysPasswordless | Should -HaveParameter -ParameterName $parameter
+        Get-Command -Name Set-SSHKeyPasswordless | Should -HaveParameter -ParameterName $parameter
     }
 
     # Context "Ssh functions should exist" {

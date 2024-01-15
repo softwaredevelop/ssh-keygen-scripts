@@ -332,30 +332,32 @@ Sets read permissions for the user "DOMAIN\Username" on the file "C:\Path\To\Fil
     Set-Acl -Path $Item -AclObject $acl
 }
 
-function Set-SSHKeysPasswordProtected {
+function Set-SSHKeyPasswordProtected {
     <#
 .SYNOPSIS
-Generates password-protected SSH keys for a remote host.
+Generates a password-protected SSH key for a remote host.
 
 .DESCRIPTION
-The Set-SSHKeysPasswordProtected function generates password-protected SSH keys for a specified remote host. It supports different key types such as RSA, ECDSA, and Ed25519. The function installs necessary dependencies, creates the required directories, and sets appropriate permissions. It generates a random password for the SSH keys and saves it securely. The generated keys are stored in the .ssh directory.
+The Set-SSHKeyPasswordProtected function generates a password-protected SSH key for a specified remote host. It supports different key types such as RSA, ECDSA, and Ed25519. The function installs necessary dependencies, creates the required directories, sets permissions, and generates the SSH key with the specified parameters.
 
 .PARAMETER RemoteHost
-The hostname or IP address of the remote host. Default is "github.com".
+The hostname or IP address of the remote host. The default value is "github.com".
 
 .PARAMETER RemoteUser
-The username for the remote host. Default is "githubuser".
+The username for the remote host. The default value is "githubuser".
 
 .PARAMETER Keytype
-The type of SSH key to generate. Valid values are "rsa", "ecdsa", and "ed25519". Default is "ed25519".
+The type of SSH key to generate. Valid values are "rsa", "ecdsa", and "ed25519". The default value is "ed25519".
 
 .PARAMETER Comment
 The comment to include in the SSH key. If not specified, it will be set to "RemoteUser@RemoteHost".
 
 .EXAMPLE
-Set-SSHKeysPasswordProtected -RemoteHost "example.com" -RemoteUser "user" -Keytype "rsa" -Comment "My RSA Key"
-Generates RSA SSH keys with the specified remote host, remote user, and comment.
+Set-SSHKeyPasswordProtected -RemoteHost "example.com" -RemoteUser "user" -Keytype "rsa" -Comment "My RSA Key"
+Generates an RSA SSH key with the specified parameters for the remote host "example.com" and the username "user". The comment for the key is set to "My RSA Key".
 
+.NOTES
+This function requires administrative privileges on Windows to install dependencies and set permissions.
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param(
@@ -404,27 +406,27 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
 
         # Install gsudo if not already installed
         $gsudoPath = "C:\Program Files\gsudo\Current\gsudo.exe"
-        Install-GsudoWindows -gsudoPath $gsudoPath
+        Install-WindowsGsudo -gsudoPath $gsudoPath
 
         # Install openssh client if not already installed
         $sshPath = "$env:SYSTEMROOT\System32\OpenSSH\ssh.exe"
-        Install-OpenSSHClientWindows -SshPath $sshPath
+        Install-WindowsOpenSSHClient -SshPath $sshPath
 
         # Install Nmap if not already installed
         $ncatPath = "C:\Program Files (x86)\Nmap\ncat.exe"
-        Install-NmapWindows -ncatPath $ncatPath
+        Install-WindowsNmap -ncatPath $ncatPath
 
         # Create .ssh directory if not already exists
-        $sshDirPath = New-DirectoryIfNotExists -Path $([Environment]::GetFolderPath("USERPROFILE")) -ChildPath ".ssh"
+        $sshDirPath = New-DirectoryIfNotExist -Path $([Environment]::GetFolderPath("USERPROFILE")) -ChildPath ".ssh"
 
         # Check if .pw directory exists inside .ssh directory, if not, create it
-        $pwDirPath = New-DirectoryIfNotExists -Path $sshDirPath.FullName -ChildPath ".pw"
+        $pwDirPath = New-DirectoryIfNotExist -Path $sshDirPath.FullName -ChildPath ".pw"
 
         # Set permissions to 700 (Owner can read, write and execute)
-        Set-Permissions -Item $sshDirPath.FullName -IdentityReference $env:USERNAME -FileSystemRights "FullControl" -AccessControlType "Allow"
+        Set-Permission -Item $sshDirPath.FullName -IdentityReference $env:USERNAME -FileSystemRights "FullControl" -AccessControlType "Allow"
 
         # Set permissions to 700 (Owner can read, write and execute)
-        Set-Permissions -Item $pwDirPath.FullName -IdentityReference $env:USERNAME -FileSystemRights "FullControl" -AccessControlType "Allow"
+        Set-Permission -Item $pwDirPath.FullName -IdentityReference $env:USERNAME -FileSystemRights "FullControl" -AccessControlType "Allow"
 
         # Generate a random password for SSH
         $sshPass = ConvertTo-SecureString -String $( -join ((65..90) + (97..122) + (48..57) | Get-Random -Count 32 | ForEach-Object { [char]$_ })) -AsPlainText -Force
@@ -450,7 +452,7 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
                 $pointer = [System.Runtime.InteropServices.Marshal]::SecureStringToBSTR($sshPass)
                 Set-Content -Path $pwFilePath -Value $([System.Runtime.InteropServices.Marshal]::PtrToStringAuto($pointer))
                 # Set $pwFilePath permission to 400
-                Set-Permissions -Item $pwFilePath -IdentityReference $env:USERNAME -FileSystemRights "Read" -AccessControlType "Allow"
+                Set-Permission -Item $pwFilePath -IdentityReference $env:USERNAME -FileSystemRights "Read" -AccessControlType "Allow"
 
                 # Run ssh-keygen
                 $keyfile = Join-Path -Path $sshDirPath.FullName -ChildPath "$Id$keyName.key"
@@ -466,11 +468,11 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
                 if ((Test-IsAdminWindows) -eq $false) {
                     Invoke-Gsudo {
                         Set-Acl -Path $using:keyfile -AclObject $using:keyfileAcl
-                        # Set-Permissions -Item $using:keyfile -IdentityReference $env:USERNAME -FileSystemRights "Read, Write" -AccessControlType "Allow"
+                        # Set-Permission -Item $using:keyfile -IdentityReference $env:USERNAME -FileSystemRights "Read, Write" -AccessControlType "Allow"
                     }
                 } else {
                     Set-Acl -Path $keyfile -AclObject $keyfileAcl
-                    # Set-Permissions -Item $keyfile -IdentityReference $env:USERNAME -FileSystemRights "Read, Write" -AccessControlType "Allow"
+                    # Set-Permission -Item $keyfile -IdentityReference $env:USERNAME -FileSystemRights "Read, Write" -AccessControlType "Allow"
                 }
 
                 # Set "$keyfile.pub" permissions to 644
@@ -605,31 +607,40 @@ ProxyCommand         ncat --proxy 127.0.0.1:9050 --proxy-type socks5 %h %p
         Add-Content -Path $config -Value $configContent
     }
 }
-Export-ModuleMember -Function "Set-SSHKeysPasswordProtected"
+Export-ModuleMember -Function "Set-SSHKeyPasswordProtected"
 
-function Set-SSHKeysPasswordless {
+function Set-SSHKeyPasswordless {
     <#
 .SYNOPSIS
-Sets up passwordless SSH keys for a remote host.
+    Sets up passwordless SSH key authentication for a remote host.
 
 .DESCRIPTION
-The Set-SSHKeysPasswordless function generates SSH key pairs and sets up passwordless authentication for a remote host. It installs necessary dependencies, creates the .ssh directory, generates the SSH keys, and sets appropriate permissions.
+    The Set-SSHKeyPasswordless function generates SSH key pairs and configures the necessary settings for passwordless SSH key authentication on both Windows and Linux systems. It installs required dependencies, creates the .ssh directory, sets appropriate permissions, and adds the generated key to the SSH configuration file.
 
 .PARAMETER RemoteHost
-The hostname or IP address of the remote host. Default is "github.com".
+    The hostname or IP address of the remote host. Default is "github.com".
 
 .PARAMETER RemoteUser
-The username for the remote host. Default is "githubuser".
+    The username for the remote host. Default is "githubuser".
 
 .PARAMETER Keytype
-The type of SSH key to generate. Valid options are "ed25519", "rsa", and "ecdsa". Default is "ed25519".
+    The type of SSH key to generate. Valid options are "rsa", "ecdsa", and "ed25519". Default is "ed25519".
 
 .PARAMETER Comment
-The comment to include in the SSH key. If not specified, it will be set to "RemoteUser@RemoteHost".
+    The comment to include in the SSH key. If not specified, it will be set to "RemoteUser@RemoteHost".
 
 .EXAMPLE
-Set-SSHKeysPasswordless -RemoteHost "example.com" -RemoteUser "user" -Keytype "rsa" -Comment "My SSH Key"
-Generates RSA SSH key pair for the remote host "example.com" with the username "user" and the comment "My SSH Key".
+    Set-SSHKeyPasswordless -RemoteHost "example.com" -RemoteUser "user" -Keytype "rsa" -Comment "My SSH Key"
+    Generates an RSA SSH key pair with the specified comment for the user "user" on the host "example.com".
+
+.NOTES
+    This function requires administrative privileges on Windows systems to install dependencies and set permissions.
+
+    On Linux systems, this function requires sudo privileges to install dependencies and set permissions.
+
+    The generated SSH key pair will be stored in the .ssh directory under the user's home directory.
+
+    The SSH configuration file will be updated to include the generated key for the specified remote host.
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
@@ -679,21 +690,21 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
 
         # Install gsudo if not already installed
         $gsudoPath = "C:\Program Files\gsudo\Current\gsudo.exe"
-        Install-GsudoWindows -gsudoPath $gsudoPath
+        Install-WindowsGsudo -gsudoPath $gsudoPath
 
         # Install openssh client if not already installed
         $sshPath = "$env:SYSTEMROOT\System32\OpenSSH\ssh.exe"
-        Install-OpenSSHClientWindows -SshPath $sshPath
+        Install-WindowsOpenSSHClient -SshPath $sshPath
 
         # Install Nmap if not already installed
         $ncatPath = "C:\Program Files (x86)\Nmap\ncat.exe"
-        Install-NmapWindows -ncatPath $ncatPath
+        Install-WindowsNmap -ncatPath $ncatPath
 
         # Create .ssh directory if not already exists
-        $sshDirPath = New-DirectoryIfNotExists -Path $([Environment]::GetFolderPath("USERPROFILE")) -ChildPath ".ssh"
+        $sshDirPath = New-DirectoryIfNotExist -Path $([Environment]::GetFolderPath("USERPROFILE")) -ChildPath ".ssh"
 
         # Set permissions to 700 (Owner can read, write and execute)
-        Set-Permissions -Item $sshDirPath.FullName -IdentityReference $env:USERNAME -FileSystemRights "FullControl" -AccessControlType "Allow"
+        Set-Permission -Item $sshDirPath.FullName -IdentityReference $env:USERNAME -FileSystemRights "FullControl" -AccessControlType "Allow"
 
         # Password for SSH
         $sshPass = ""
@@ -727,11 +738,11 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
                 if ((Test-IsAdminWindows) -eq $false) {
                     Invoke-Gsudo {
                         Set-Acl -Path $using:keyfile -AclObject $using:keyfileAcl
-                        # Set-Permissions -Item $using:keyfile -IdentityReference $env:USERNAME -FileSystemRights "Read, Write" -AccessControlType "Allow"
+                        # Set-Permission -Item $using:keyfile -IdentityReference $env:USERNAME -FileSystemRights "Read, Write" -AccessControlType "Allow"
                     }
                 } else {
                     Set-Acl -Path $keyfile -AclObject $keyfileAcl
-                    # Set-Permissions -Item $keyfile -IdentityReference $env:USERNAME -FileSystemRights "Read, Write" -AccessControlType "Allow"
+                    # Set-Permission -Item $keyfile -IdentityReference $env:USERNAME -FileSystemRights "Read, Write" -AccessControlType "Allow"
                 }
 
                 # Set "$keyfile.pub" permissions to 644
@@ -866,4 +877,4 @@ ProxyCommand         ncat --proxy 127.0.0.1:9050 --proxy-type socks5 %h %p
         Add-Content -Path $config -Value $configContent
     }
 }
-Export-ModuleMember -Function "Set-SSHKeysPasswordless"
+Export-ModuleMember -Function "Set-SSHKeyPasswordless"
