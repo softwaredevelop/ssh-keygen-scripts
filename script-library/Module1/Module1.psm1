@@ -29,24 +29,24 @@ function Get-InternalHelloWorld {
     Write-Output "Internal Hello World"
 }
 
-function Test-IsAdminWindows {
+function Test-IsWindowsAdmin {
     <#
 .SYNOPSIS
-Checks if the current user is an administrator.
+Checks if the current user is running the script as a Windows Administrator.
 
 .DESCRIPTION
-The Test-IsAdmin function checks if the current user has administrative privileges.
+The Test-IsWindowsAdmin function checks if the current user has administrative privileges on a Windows system.
 
 .PARAMETER None
 This function does not accept any parameters.
 
 .EXAMPLE
-Test-IsAdminWindows
-Checks if the current user is an administrator.
+Test-IsWindowsAdmin
+Checks if the current user is a Windows Administrator.
 
 .OUTPUTS
-[System.Boolean]
-Returns $true if the current user is an administrator, otherwise returns $false.
+System.Boolean
+Returns $true if the current user is a Windows Administrator, otherwise returns $false.
 #>
     ([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")
 }
@@ -82,8 +82,8 @@ function Start-ServiceWithRetry {
         [int]$MaxRetries = 5
     )
 
-    if (-not (Test-IsAdminWindows)) {
-        Write-Host "Error: This script must be run with administrator privileges1." -ForegroundColor Red
+    if (-not (Test-IsWindowsAdmin)) {
+        Write-Error "This script must be run with administrator privileges."
         Break
     }
 
@@ -116,7 +116,7 @@ function Update-System {
     Updates the system by installing Windows updates.
 
 .DESCRIPTION
-    The Update-System function updates the system by installing Windows updates. It checks if the script is run with administrator privileges and then retrieves the available updates using the Get-WindowsUpdate cmdlet. If updates are found, it installs them using the Install-WindowsUpdate cmdlet.
+    The Update-System function is used to update the system by installing Windows updates. It checks if the script is run with administrator privileges and then retrieves the available updates using the Get-WindowsUpdate cmdlet. If there are updates available, it installs them using the Install-WindowsUpdate cmdlet.
 
 .PARAMETER Update
     Specifies the type of updates to install. Valid values are "WindowsUpdate" and "MicrosoftUpdate". The default value is "WindowsUpdate".
@@ -134,7 +134,7 @@ function Update-System {
         [string]$Update = "WindowsUpdate"
     )
 
-    if (-not (Test-IsAdminWindows)) {
+    if (-not (Test-IsWindowsAdmin)) {
         Write-Error -Message "Error: This script must be run with administrator privileges." -ErrorId "NotAdmin"
         Break
     }
@@ -164,24 +164,24 @@ function Update-System {
         }
         Invoke-Command @parameters
     } else {
-        Write-Host "No updates available for ${Update}."
+        Write-Output "No updates available for ${Update}."
     }
 }
 Export-ModuleMember -Function "Update-System"
 
-function Install-GsudoWindows {
+function Install-WindowsGsudo {
     <#
 .SYNOPSIS
-Installs Gsudo for Windows.
+Installs the Windows version of gsudo if it is not already installed.
 
 .DESCRIPTION
-This function installs Gsudo for Windows if it is not already installed.
+The Install-WindowsGsudo function installs the Windows version of gsudo if it is not already installed. It checks if the specified gsudoPath exists, and if not, it uses the 'winget' command to install gsudo.
 
 .PARAMETER gsudoPath
-The path to the Gsudo executable.
+The path to the gsudo executable.
 
 .EXAMPLE
-Install-GsudoWindows -gsudoPath "C:\Program Files\Gsudo\gsudo.exe"
+Install-WindowsGsudo -gsudoPath "C:\Program Files\gsudo\gsudo.exe"
 #>
     [CmdletBinding()]
     param(
@@ -193,20 +193,20 @@ Install-GsudoWindows -gsudoPath "C:\Program Files\Gsudo\gsudo.exe"
     }
 }
 
-function Install-OpenSSHClientWindows {
+function Install-WindowsOpenSSHClient {
     <#
 .SYNOPSIS
-Installs the OpenSSH client on Windows.
+Installs the Windows OpenSSH client.
 
 .DESCRIPTION
-The Install-OpenSSHClientWindows function installs the OpenSSH client on Windows if it is not already installed. It requires the path to the SSH executable as a parameter.
+This function installs the Windows OpenSSH client if it is not already installed. It checks if the specified SSH path exists, and if not, it adds the OpenSSH client capability to the Windows system.
 
 .PARAMETER SshPath
 The path to the SSH executable.
 
 .EXAMPLE
-Install-OpenSSHClientWindows -SshPath "C:\OpenSSH\ssh.exe"
-Installs the OpenSSH client using the specified path to the SSH executable.
+Install-WindowsOpenSSHClient -SshPath "C:\OpenSSH\ssh.exe"
+Installs the Windows OpenSSH client using the specified SSH path.
 
 #>
     [CmdletBinding()]
@@ -215,7 +215,7 @@ Installs the OpenSSH client using the specified path to the SSH executable.
         [string]$SshPath
     )
     if (-not (Test-Path $SshPath)) {
-        if ((Test-IsAdminWindows) -eq $false) {
+        if ((Test-IsWindowsAdmin) -eq $false) {
             Invoke-Gsudo {
                 Add-WindowsCapability -Online -Name OpenSSH.Client~~~~
             }
@@ -225,19 +225,19 @@ Installs the OpenSSH client using the specified path to the SSH executable.
     }
 }
 
-function Install-NmapWindows {
+function Install-WindowsNmap {
     <#
 .SYNOPSIS
-Installs Nmap on Windows if it is not already installed.
+Installs Windows Nmap if it is not already installed.
 
 .DESCRIPTION
-The Install-NmapWindows function installs Nmap on Windows if it is not already installed. It checks if the specified ncatPath exists, and if not, it uses the winget command to install the Insecure.Nmap package.
+The Install-WindowsNmap function installs Windows Nmap if it is not already installed on the system. It checks if the specified ncatPath exists, and if not, it uses the 'winget' command to install the Insecure.Nmap package.
 
 .PARAMETER ncatPath
 The path to the ncat executable.
 
 .EXAMPLE
-Install-NmapWindows -ncatPath "C:\Program Files\Nmap\ncat.exe"
+Install-WindowsNmap -ncatPath "C:\Program Files\Nmap\ncat.exe"
 #>
     [CmdletBinding()]
     param(
@@ -249,24 +249,23 @@ Install-NmapWindows -ncatPath "C:\Program Files\Nmap\ncat.exe"
     }
 }
 
-function New-DirectoryIfNotExists {
+function New-DirectoryIfNotExist {
     <#
 .SYNOPSIS
 Creates a new directory if it does not already exist.
 
 .DESCRIPTION
-The New-DirectoryIfNotExists function creates a new directory at the specified path if it does not already exist.
+The New-DirectoryIfNotExist function creates a new directory at the specified path if it does not already exist. If the directory already exists, it returns the existing directory.
 
 .PARAMETER Path
-The parent path where the new directory will be created.
+The path where the new directory should be created.
 
 .PARAMETER ChildPath
-The name of the new directory.
+An optional child path to append to the parent path.
 
 .EXAMPLE
-New-DirectoryIfNotExists -Path "C:\Temp" -ChildPath "NewFolder"
-
-This example creates a new directory named "NewFolder" under the "C:\Temp" directory if it does not already exist.
+New-DirectoryIfNotExist -Path "C:\Temp" -ChildPath "Subfolder"
+Creates a new directory at "C:\Temp\Subfolder" if it does not already exist.
 
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
@@ -285,13 +284,13 @@ This example creates a new directory named "NewFolder" under the "C:\Temp" direc
     }
 }
 
-function Set-Permissions {
+function Set-Permission {
     <#
 .SYNOPSIS
 Sets permissions for a specified item.
 
 .DESCRIPTION
-The Set-Permissions function is used to set permissions for a specified item in the file system. It removes any existing access rules for the item and adds a new access rule based on the provided parameters.
+The Set-Permission function is used to set permissions for a specified item in the file system. It removes all existing access rules for the item and adds a new access rule based on the provided parameters.
 
 .PARAMETER Item
 The path of the item for which permissions need to be set.
@@ -303,12 +302,11 @@ The identity reference for the user or group to which the permissions will be ap
 The file system rights to be granted to the user or group.
 
 .PARAMETER AccessControlType
-The type of access control to be applied, such as Allow or Deny.
+The type of access control to be applied.
 
 .EXAMPLE
-Set-Permissions -Item "C:\Path\To\File.txt" -IdentityReference "DOMAIN\Username" -FileSystemRights "Read" -AccessControlType "Allow"
-Sets the permissions for the specified file, granting read access to the user "DOMAIN\Username".
-
+Set-Permission -Item "C:\Path\To\File.txt" -IdentityReference "DOMAIN\Username" -FileSystemRights "Read" -AccessControlType "Allow"
+Sets read permissions for the user "DOMAIN\Username" on the file "C:\Path\To\File.txt".
 #>
     [CmdletBinding(SupportsShouldProcess = $true)]
     param (
@@ -400,7 +398,7 @@ Generates RSA SSH keys with the specified remote host, remote user, and comment.
         # Check if winget is installed
         if (-not (Test-Path $wingetPath)) {
             # Winget is not installed, exit the script
-            Write-Host "Winget is not installed." -ForegroundColor Red
+            Write-Error "Winget is not installed."
             Break
         }
 
@@ -675,7 +673,7 @@ Generates RSA SSH key pair for the remote host "example.com" with the username "
         # Check if winget is installed
         if (-not (Test-Path $wingetPath)) {
             # Winget is not installed, exit the script
-            Write-Host "Winget is not installed." -ForegroundColor Red
+            Write-Error "Winget is not installed."
             Break
         }
 
