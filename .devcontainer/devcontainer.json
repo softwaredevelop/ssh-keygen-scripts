@@ -1,5 +1,5 @@
 {
-	"name": "ssh-keygen",
+	"name": "ssh-keygen-scripts",
 	"build": {
 		"dockerfile": "Containerfile.ubuntu",
 		"args": {
@@ -45,7 +45,7 @@
 
 	"runArgs": [
 		"--userns=keep-id",
-		"--name=ssh-keygen"
+		"--name=ssh-keygen-scripts"
 	],
 	"containerUser": "vscode",
 	"postCreateCommand": "bash test/test.sh"

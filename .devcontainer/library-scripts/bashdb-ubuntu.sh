@@ -2,7 +2,7 @@
 
 set -e
 
-BASHDB_VERSION=${1:-"5.0-1.1.12"}
+BASHDB_VERSION=${1:-""}
 SCRIPT=("${BASH_SOURCE[@]}")
 SCRIPT_PATH="${SCRIPT##*/}"
 SCRIPT_NAME="${SCRIPT_PATH%.*}"

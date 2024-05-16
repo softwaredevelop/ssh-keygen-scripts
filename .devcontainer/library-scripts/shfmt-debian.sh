@@ -2,7 +2,7 @@
 
 set -e
 
-SHFMT_VERSION=${1:-"3.7.0"}
+SHFMT_VERSION=${1:-"3.8.0"}
 SCRIPT=("${BASH_SOURCE[@]}")
 SCRIPT_PATH="${SCRIPT##*/}"
 SCRIPT_NAME="${SCRIPT_PATH%.*}"
