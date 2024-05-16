@@ -2,7 +2,7 @@
 
 set -e
 
-EDITORCONFIG_VERSION=${1:-"2.7.2"}
+EDITORCONFIG_VERSION=${1:-"3.0.1"}
 SCRIPT=("${BASH_SOURCE[@]}")
 SCRIPT_PATH="${SCRIPT##*/}"
 SCRIPT_NAME="${SCRIPT_PATH%.*}"
@@ -40,7 +40,7 @@ function editorconfig_inst() {
     ARCH=amd64
     ;;
   esac
-  curl -O -L -C - https://github.com/editorconfig-checker/editorconfig-checker/releases/download/"$EDITORCONFIG_VERSION"/ec-$OS-$ARCH.$EXT
+  wget https://github.com/editorconfig-checker/editorconfig-checker/releases/download/v"$EDITORCONFIG_VERSION"/ec-$OS-$ARCH.$EXT -O ec-$OS-$ARCH.$EXT
   tar -xzf ec-$OS-$ARCH.$EXT --directory=/usr/local/bin/ --strip-components=1
   mv /usr/local/bin/ec-linux-amd64 /usr/local/bin/ec
   rm ec-$OS-$ARCH.$EXT
@@ -59,8 +59,7 @@ export DEBIAN_FRONTEND=noninteractive
 
 if [ "${EDITORCONFIG_ALREADY_INSTALLED}" != "true" ]; then
   check_packages \
-    ca-certificates \
-    curl
+    ca-certificates
   editorconfig_inst
 
   EDITORCONFIG_ALREADY_INSTALLED="true"
